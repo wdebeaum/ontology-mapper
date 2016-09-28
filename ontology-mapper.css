@@ -7,35 +7,68 @@ body {
   height: 100%;
 }
 
-h1 { font-size: x-large; }
-h2 { font-size: large; }
-h3 { font-size: normal; }
-
 h1, h2, h3 {
-  margin: 0.5ex;
+  font-size: medium;
+  margin: 0;
 }
 
 #layout {
   table-layout: fixed;
+  overflow: hidden;
+  white-space: nowrap;
   border-collapse: collapse;
   width: 100%;
   height: 100%;
 }
 
-#layout tr td {
+#layout td {
   border: 1px solid black;
+  padding: 0;
 }
 
 #window-heading, #trees-heading, #details-heading {
   height: 2em;
 }
 
-#trees, #details {
-  height: calc(50% - 6em);
+#trees td, #details td {
+  height: calc(50vh - 3em - 3px);
+  vertical-align: top;
+}
+
+#trees div, #details div {
+  height: calc(50vh - 3em - 3px);
+  overflow: auto;
+}
+
+ul {
+  margin: 0;
+}
+
+#trees li {
+  list-style-position: outside;
+  list-style-type: none;
+}
+
+.bullet {
+  font-family: monospace;
+  font-size: large;
+}
+
+a.bullet {
+  color: blue;
 }
 
 td.map {
-  width: 10%;
+  width: 20%;
+}
+
+/* FIXME this leaves a 4-6px gap below the svg (and sometimes to the right,
+ * depending on the overall viewport height!?!), but if I "fix" that it throws
+ * the whole table out of whack. Huh?
+ */
+td.map svg {
+  width: calc(20vw - 4px);
+  height: calc(50vh - 3em - 7px);
 }
 
 input.search {
