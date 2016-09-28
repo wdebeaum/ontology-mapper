@@ -1,0 +1,43 @@
+html {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  height: 100%;
+}
+
+h1 { font-size: x-large; }
+h2 { font-size: large; }
+h3 { font-size: normal; }
+
+h1, h2, h3 {
+  margin: 0.5ex;
+}
+
+#layout {
+  table-layout: fixed;
+  border-collapse: collapse;
+  width: 100%;
+  height: 100%;
+}
+
+#layout tr td {
+  border: 1px solid black;
+}
+
+#window-heading, #trees-heading, #details-heading {
+  height: 2em;
+}
+
+#trees, #details {
+  height: calc(50% - 6em);
+}
+
+td.map {
+  width: 10%;
+}
+
+input.search {
+  width: 90%;
+}
