@@ -28,6 +28,7 @@ h1, h2, h3 {
 
 #window-heading, #trees-heading, #details-heading {
   height: 2em;
+  background-color: #ccc;
 }
 
 #trees td, #details td {
