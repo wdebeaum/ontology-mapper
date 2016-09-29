@@ -6,9 +6,7 @@ $(function() {
 	icons: false,
 	stripes: true
       },
-      check_callback: true
-    },
-    plugins: ['dnd']
+    }
   };
   var tree = [
     { text: 'root',
@@ -26,7 +24,16 @@ $(function() {
       ]
     }
   ];
-  jsTreeConfig.core.data = tree
-  $('#trips-tree').jstree(jsTreeConfig);
-  $('#your-tree').jstree(jsTreeConfig);
+  $('#trips-tree').jstree(
+    $.extend(true, { core: { data: tree } }, jsTreeConfig)
+  );
+  $('#your-tree').jstree(
+    $.extend(true, {
+      core: {
+	data: tree,
+	check_callback: true
+      },
+      plugins: ['dnd']
+    }, jsTreeConfig)
+  );
 });
