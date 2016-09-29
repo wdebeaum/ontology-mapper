@@ -50,6 +50,24 @@ ul {
   list-style-type: none;
 }
 
+#trees hr {
+  display: inline-block;
+  vertical-align: middle;
+  width: 50vh;
+  height: 2px;
+  border: 0;
+  background-color: black;
+}
+
+#trips-tree li {
+  overflow: hidden;
+}
+
+#your-tree hr {
+  position: relative;
+  left: calc(-50vh - 6em);
+}
+
 .bullet {
   font-family: monospace;
   font-size: large;
@@ -73,5 +91,7 @@ td.map svg {
 }
 
 input.search {
-  width: 90%;
+  width: calc(100% - 2px);
+  height: 2em;
+  border: 0;
 }
