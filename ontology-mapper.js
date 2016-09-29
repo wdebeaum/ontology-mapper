@@ -5,8 +5,10 @@ $(function() {
       themes: {
 	icons: false,
 	stripes: true
-      }
-    }
+      },
+      check_callback: true
+    },
+    plugins: ['dnd']
   };
   var tree = [
     { text: 'root',
