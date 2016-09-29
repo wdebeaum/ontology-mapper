@@ -41,42 +41,6 @@ h1, h2, h3 {
   overflow: auto;
 }
 
-ul {
-  margin: 0;
-}
-
-#trees li {
-  list-style-position: outside;
-  list-style-type: none;
-}
-
-#trees hr {
-  display: inline-block;
-  vertical-align: middle;
-  width: 50vh;
-  height: 2px;
-  border: 0;
-  background-color: black;
-}
-
-#trips-tree li {
-  overflow: hidden;
-}
-
-#your-tree hr {
-  position: relative;
-  left: calc(-50vh - 6em);
-}
-
-.bullet {
-  font-family: monospace;
-  font-size: large;
-}
-
-a.bullet {
-  color: blue;
-}
-
 td.map {
   width: 20%;
 }
