@@ -10,7 +10,8 @@ DOWNLOADS = \
 	style.min.css \
 	32px.png \
 	40px.png \
-	throbber.gif
+	throbber.gif \
+	str.replace.template.xsl
 
 download: $(DOWNLOADS)
 
@@ -23,6 +24,9 @@ jstree.min.js:
 
 style.min.css 32px.png 40px.png throbber.gif:
 	$(call download,https://cdnjs.cloudflare.com/ajax/libs/jstree/$(JSTREE_VERSION)/themes/default/$@)
+
+str.replace.template.xsl:
+	$(call download,http://exslt.org/str/functions/replace/str.replace.template.xsl)
 
 clean:
 	rm -f $(DOWNLOADS)

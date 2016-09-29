@@ -2,4 +2,5 @@
 *.min.*
 *.png
 *.gif
+str.*.template.xsl
 old
