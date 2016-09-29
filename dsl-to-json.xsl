@@ -17,7 +17,18 @@ dsl-to-json.xsl - convert trips-ont-dsl.xml to JSON on the way to jsTree
 
 <template match="relation[@label='inherit']">
  <text>    inherit: '</text>
- <variable name="v" select="normalize-space(.)" />
+ <!-- FIXME sometimes we get both the parent ONT type and the feature list type in the inherit relation. This just gets the first one. -->
+ <variable name="norm" select="normalize-space(.)" />
+ <variable name="v">
+  <choose>
+   <when test="contains($norm, ' ')">
+    <value-of select="substring-before($norm, ' ')" />
+   </when>
+   <otherwise>
+    <value-of select="$norm" />
+   </otherwise>
+  </choose>
+ </variable>
  <choose>
   <when test="starts-with($v, 'ont::')">
    <value-of select="substring($v, 6)" />
@@ -29,6 +40,9 @@ dsl-to-json.xsl - convert trips-ont-dsl.xml to JSON on the way to jsTree
  <text>',
 </text>
 </template>
+
+<!-- FIXME see above -->
+<template match="or[parent::concept/parent::dsl]" />
 
 <template match="or">
  <text>    inherit: '</text>
@@ -125,6 +139,21 @@ dsl-to-json.xsl - convert trips-ont-dsl.xml to JSON on the way to jsTree
 </text>
  <apply-templates />
  <text>    ],
+</text>
+</template>
+
+<template match="comment">
+ <text>    comment: </text>
+ <variable name="v" select="normalize-space(.)" />
+ <choose>
+  <when test="starts-with($v, '&quot;')">
+   <value-of select="$v" />
+  </when>
+  <otherwise>
+   <text>'</text><value-of select="$v" /><text>'</text>
+  </otherwise>
+ </choose>
+ <text>,
 </text>
 </template>
 
