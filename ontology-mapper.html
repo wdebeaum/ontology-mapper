@@ -54,7 +54,8 @@
    <td colspan="2">
     <div id="trips-details">
      name: <span id="trips-concept-name"></span><br>
-     comment: <span id="trips-concept-comment"></span><br>
+     comment:
+     <div class="comment" id="trips-concept-comment"></div>
      roles:
      <ul id="trips-roles">
       <li class="template"><select><option value="" disabled selected>extra role</option><option>TODO1</option><option>TODO2</option></select>
@@ -76,7 +77,9 @@
    <td colspan="2">
     <div id="your-details">
      <label>name: <input id="your-concept-name" type="text" required></label><br>
-     <label>comment: <input id="your-concept-comment" type="text"></label><br>
+     <label>comment:<br>
+     <textarea class="comment" id="your-concept-comment"></textarea>
+     </label><br>
      roles:
      <ul id="your-roles">
       <li class="template"><input type="text" placeholder="role name" required> <input type="text" placeholder="type restriction">

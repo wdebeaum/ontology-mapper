@@ -36,7 +36,7 @@ h1, h2, h3 {
   vertical-align: top;
 }
 
-#trees div, #details div {
+#trees > td > div, #details > td > div {
   height: calc(50vh - 3em - 3px);
   overflow: auto;
 }
@@ -81,4 +81,10 @@ input:invalid {
 
 .template {
   display: none;
+}
+
+.comment {
+  white-space: normal;
+  width: calc(100% - 1em - 4px);
+  margin-left: 1em;
 }

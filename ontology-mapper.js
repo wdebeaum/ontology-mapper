@@ -45,6 +45,19 @@ $(function() {
     return treeNodes.root;
   }
 
+  /* Remove all li elements from a ul before the one with class="template", and
+   * then return that one.
+   */
+  function clearUlUpToTemplate(ul) {
+    var li = ul.children().first();
+    while (!li.hasClass('template')) {
+      var nextLi = li.next();
+      li.remove();
+      li = nextLi;
+    }
+    return li;
+  }
+
   var jsTreeConfig = {
     core: {
       animation: false,
@@ -68,6 +81,7 @@ $(function() {
 	$('#trips-tree').jstree(
 	  $.extend(true, { core: { data: tree } }, jsTreeConfig)
 	);
+	window.tripsJsTree = $.jstree.reference('trips-tree');
       }).
       fail(function(jqXHR, textStatus, errorThrown) {
 	console.log({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
@@ -104,8 +118,78 @@ $(function() {
   );
   window.yourJsTree = $.jstree.reference('#your-tree');
 
-  $('#your-tree').on('select_node.jstree', function(node, selected, evt) {
-    // TODO display details of node if selected.length == 1
+  function formatMaybeDisj(x) {
+    return '<b>' + x.replace(/ or /g, '</b> <i>or</i> <b>') + '</b>; ';
+  }
+
+  function formatFLType(inherit) {
+    return 'fltype: ' + formatMaybeDisj(inherit);
+  }
+
+  function formatRole(roleRestrMap) {
+    var roleNames =
+      '<b>' +
+      roleRestrMap.roles
+	.replace(/ont:/g,'')
+	.replace(/ /, '</b> <i>implements</i> <b>') +
+      '</b>';
+    var optionality = (roleRestrMap.optional ? ' (<i>optional</i>) ' : ' ');
+    var restriction = '';
+    if ('restriction' in roleRestrMap) {
+      var fltype = '';
+      var feats = '';
+      if ('inherit' in roleRestrMap.restriction) {
+	fltype = formatFLType(roleRestrMap.restriction.inherit);
+      }
+      if ('sem_feats' in roleRestrMap.restriction) {
+	if ('inherit' in roleRestrMap.restriction.sem_feats) {
+	  fltype = formatFLType(roleRestrMap.restriction.sem_feats.inherit);
+	}
+	if ('features' in roleRestrMap.restriction.sem_feats) {
+	  feats =
+	    $.map(roleRestrMap.restriction.sem_feats.features, function(v, k) {
+	      return k + ': ' + formatMaybeDisj(v);
+	    }).join('');
+	}
+      }
+      restriction = 'restricted to ' + fltype + feats;
+    }
+    return roleNames + optionality + restriction;
+  }
+
+  $('#trips-tree').on('changed.jstree', function(evt, args) {
+    if (args.selected.length == 1) {
+      var name = tripsJsTree.get_text(args.selected[0]);
+      $('#trips-concept-name').text(name);
+      var concept = tripsOnt[name];
+      $('#trips-concept-comment').text(concept.comment || '');
+      // TODO sem_feats?
+      var template = clearUlUpToTemplate($('#trips-roles'));
+      if ('sem_frame' in concept) {
+	concept.sem_frame.forEach(function(roleRestrMap, i) {
+	  var li = $(document.createElement('li'));
+	  li.insertBefore(template);
+	  li.attr('id', 'trips-role-' + i);
+	  li.html(formatRole(roleRestrMap));
+	});
+      }
+      // TODO words/examples
+      $('#trips-details').show();
+    } else {
+      $('#trips-details').hide();
+    }
+  });
+
+  $('#your-tree').on('changed.jstree', function(evt, args) {
+    // selection changed
+    if (args.selected.length == 1) {
+      var name = yourJsTree.get_text(args.selected[0]);
+      $('#your-concept-name').val(name);
+      // TODO fill other details
+      $('#your-details').show();
+    } else {
+      $('#your-details').hide();
+    }
   });
 
   $('#rem-concept').on('click', function() {
