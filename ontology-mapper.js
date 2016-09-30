@@ -102,4 +102,19 @@ $(function() {
       plugins: ['dnd']
     }, jsTreeConfig)
   );
+  window.yourJsTree = $.jstree.reference('#your-tree');
+
+  $('#your-tree').on('select_node.jstree', function(node, selected, evt) {
+    // TODO display details of node if selected.length == 1
+  });
+
+  $('#rem-concept').on('click', function() {
+    yourJsTree.delete_node(yourJsTree.get_selected(true));
+    // TODO remove details for selected nodes, and stop displaying them
+  });
+
+  $('#add-concept').on('click', function() {
+    yourJsTree.create_node(null, '(new concept)');
+    // TODO add blank details, select new node
+  });
 });
