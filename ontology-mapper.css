@@ -78,3 +78,7 @@ input.search {
 input:invalid {
   background-color: pink;
 }
+
+.template {
+  display: none;
+}
