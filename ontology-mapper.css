@@ -54,8 +54,27 @@ td.map svg {
   height: calc(50vh - 3em - 7px);
 }
 
+button {
+  border-style: outset;
+  border-width: 2px;
+  border-color: #ddd;
+  background-color: #ddd;
+}
+button:active {
+  border-style: inset;
+}
+
+input {
+  border: 1px solid black;
+  padding: 1px;
+}
+
 input.search {
   width: calc(100% - 2px);
   height: 2em;
   border: 0;
+}
+
+input:invalid {
+  background-color: pink;
 }

@@ -114,7 +114,9 @@ $(function() {
   });
 
   $('#add-concept').on('click', function() {
-    yourJsTree.create_node(null, '(new concept)');
-    // TODO add blank details, select new node
+    var newNodeID = yourJsTree.create_node(null, '(new concept)');
+    // TODO add blank details
+    yourJsTree.deselect_all();
+    yourJsTree.select_node(newNodeID);
   });
 });

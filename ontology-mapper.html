@@ -53,7 +53,19 @@
   <tr id="details">
    <td colspan="2">
     <div id="trips-details">
-     TODO
+     name: <span id="trips-concept-name"></span><br>
+     comment: <span id="trips-concept-comment"></span><br>
+     roles:
+     <ul id="trips-roles">
+      <li>TODO
+      <li><select placeholder="extra role"><option>TODO1</option><option>TODO2</option></select>
+      <li><button id="add-trips-role">+</button> <button id="rem-trips-role">-</button>
+     </ul>
+     words: <span id="trips-words"></span><br>
+     examples:
+     <ul id="trips-examples">
+      <li>TODO
+     </ul>
     </div>
    </td>
 
@@ -65,7 +77,19 @@
 
    <td colspan="2">
     <div id="your-details">
-     TODO
+     <label>name: <input id="your-concept-name" type="text" required></label><br>
+     <label>comment: <input id="your-concept-comment" type="text"></label><br>
+     roles:
+     <ul id="your-roles">
+      <li><input type="text" placeholder="role name" required> <input type="text" placeholder="type restriction">
+      <li><button id="add-your-role">+</button> <button id="rem-your-role">-</button>
+     </ul>
+     <label>words: <input id="your-words" type="text" placeholder="comma-separated list"></label><br>
+     examples:
+     <ul id="your-examples">
+      <li><input type="text" required>
+      <li><button id="add-example">+</button> <button id="rem-example">-</button>
+     </ul>
     </div>
    </td>
   </tr>
