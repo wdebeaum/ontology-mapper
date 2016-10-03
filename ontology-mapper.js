@@ -58,6 +58,29 @@ $(function() {
     return li;
   }
 
+  /* Add a copy of li.template (with class="template" removed) just before it,
+   * and return the copy.
+   */
+  function addLiBeforeTemplate(ul) {
+    console.log(ul);
+    var template = $(ul).find('li.template');
+    var newLi = template.clone();
+    newLi.removeClass('template');
+    template.before(newLi);
+    return newLi;
+  }
+
+  /* Remove the li just before li.template, if any, and return it (or null). */
+  function remLiBeforeTemplate(ul) {
+    var oldLi = $(ul).find('li.template').prev('li');
+    if (oldLi.length == 0) {
+      return null;
+    } else {
+      oldLi.remove();
+      return oldLi;
+    }
+  }
+
   var jsTreeConfig = {
     core: {
       animation: false,
@@ -202,5 +225,15 @@ $(function() {
     // TODO add blank details
     yourJsTree.deselect_all();
     yourJsTree.select_node(newNodeID);
+  });
+
+  $('#add-trips-role, #add-your-role, #add-example').on('click', function(evt) {
+    var ul = evt.target.parentNode.parentNode;
+    addLiBeforeTemplate(ul);
+  });
+
+  $('#rem-trips-role, #rem-your-role, #rem-example').on('click', function(evt) {
+    var ul = evt.target.parentNode.parentNode;
+    remLiBeforeTemplate(ul);
   });
 });
