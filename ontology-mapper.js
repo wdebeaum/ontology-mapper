@@ -66,7 +66,7 @@ $(function() {
     var template = $(ul).find('li.template');
     var newLi = template.clone();
     newLi.removeClass('template');
-    template.before(newLi);
+    newLi.insertBefore(template);
     return newLi;
   }
 
@@ -141,6 +141,80 @@ $(function() {
   );
   window.yourJsTree = $.jstree.reference('#your-tree');
 
+  /* Modify childFeats to include any parts of parentFeats that it doesn't
+   * override.
+   */
+  function mergeFeats(childFeats, parentFeats) {
+    // TODO
+    // .inherit
+    //   ' or '
+    // .features
+  }
+
+  /* Fill semFeatsOut={} and semFrameOut=[] by going up the hierarchy from
+   * concept. If inherited=true, mark any roles added this way as inherited.
+   */
+  function applyInheritance(concept, semFeatsOut, semFrameOut, inherited) {
+    // fill semFeatsOut
+    if ('sem_feats' in concept) {
+      mergeFeats(semFeatsOut, concept.sem_feats);
+    }
+    // fill semFrameOut
+    if ('sem_frame' in concept) {
+      concept.sem_frame.forEach(function(newRoleRestrMap) {
+	var newRoles = newRoleRestrMap.roles.split(' ')[0];
+	var oldRoleRestrMap;
+	semFrameOut.forEach(function(m) {
+	  if (m.roles.split(' ').includes(newRoles[0])) {
+	    oldRoleRestrMap = m;
+	  }
+	});
+	if ('undefined' === typeof oldRoleRestrMap) {
+	  // just deep copy newRoleRestrMap as a new element of semFrameOut
+	  var roleRestrMap = $.extend(true, {}, newRoleRestrMap);
+	  if (inherited) { roleRestrMap.inherited = true; }
+	  semFrameOut.push(roleRestrMap);
+	} else { // have oldRoleRestrMap
+	  // copy anything in newRoleRestrMap into oldRoleRestrMap that it
+	  // doesn't already have (i.e. that it doesn't override)
+	  // roles/implements
+	  var oldRoles = oldRoleRestrMap.roles.split(' ');
+	  newRoles.slice(1).forEach(function(newRole) {
+	    if (!oldRoles.include(newRole)) {
+	      oldRoles.push(newRole);
+	    }
+	  });
+	  // optionality isn't inherited?
+	  // restriction
+	  if ('restriction' in newRoleRestrMap) {
+	    if ('restriction' in oldRoleRestrMap) {
+	      // merge restrictions
+	      if ('sem_feats' in newRoleRestrMap.restriction) {
+		if ('sem_feats' in oldRoleRestrMap.restriction) {
+		  mergeFeats(oldRoleRestrMap.restriction.sem_feats,
+			     newRoleRestrMap.restriction.sem_feats);
+		} else { // no old sem_feats
+		  // just deep copy new into old
+		  oldRoleRestrMap.restriction.sem_feats =
+		    $.extend(true, {}, newRoleRestrMap.restriction.sem_feats);
+		}
+	      }
+	    } else { // no old restriction
+	      // just deep copy new into old
+	      oldRoleRestrMap.restriction =
+	        $.extend(true, {}, newRoleRestrMap.restriction);
+	    }
+	  }
+	}
+      });
+    }
+    // keep going up
+    if ('inherit' in concept) {
+      applyInheritance(
+          tripsOnt[concept.inherit], semFeatsOut, semFrameOut, true);
+    }
+  }
+
   function formatMaybeDisj(x) {
     return '<b>' + x.replace(/ or /g, '</b> <i>or</i> <b>') + '</b>; ';
   }
@@ -161,9 +235,6 @@ $(function() {
     if ('restriction' in roleRestrMap) {
       var fltype = '';
       var feats = '';
-      if ('inherit' in roleRestrMap.restriction) {
-	fltype = formatFLType(roleRestrMap.restriction.inherit);
-      }
       if ('sem_feats' in roleRestrMap.restriction) {
 	if ('inherit' in roleRestrMap.restriction.sem_feats) {
 	  fltype = formatFLType(roleRestrMap.restriction.sem_feats.inherit);
@@ -186,16 +257,17 @@ $(function() {
       $('#trips-concept-name').text(name);
       var concept = tripsOnt[name];
       $('#trips-concept-comment').text(concept.comment || '');
+      var sem_feats = {};
+      var sem_frame = [];
+      applyInheritance(concept, sem_feats, sem_frame);
       // TODO sem_feats?
       var template = clearUlUpToTemplate($('#trips-roles'));
-      if ('sem_frame' in concept) {
-	concept.sem_frame.forEach(function(roleRestrMap, i) {
-	  var li = $(document.createElement('li'));
-	  li.insertBefore(template);
-	  li.attr('id', 'trips-role-' + i);
-	  li.html(formatRole(roleRestrMap));
-	});
-      }
+      sem_frame.forEach(function(roleRestrMap, i) {
+	var li = $(document.createElement('li'));
+	li.insertBefore(template);
+	li.attr('id', 'trips-role-' + i);
+	li.html(formatRole(roleRestrMap));
+      });
       // TODO words/examples
       $('#trips-details').show();
     } else {

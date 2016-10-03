@@ -45,6 +45,10 @@ dsl-to-json.xsl - convert trips-ont-dsl.xml to JSON on the way to jsTree
 <template match="or[parent::concept/parent::dsl]" />
 
 <template match="or">
+ <if test="parent::role-restr-map">
+  <text>          sem_feats: {
+        </text>
+ </if>
  <text>    inherit: '</text>
  <for-each select="concept/@name">
   <if test="position() != 1">
@@ -52,7 +56,12 @@ dsl-to-json.xsl - convert trips-ont-dsl.xml to JSON on the way to jsTree
   </if>
   <value-of select="." />
  </for-each>
- <text>',
+ <text>'</text>
+ <if test="parent::role-restr-map">
+  <text>
+          }</text>
+ </if>
+ <text>,
 </text>
 </template>
 
@@ -158,9 +167,18 @@ dsl-to-json.xsl - convert trips-ont-dsl.xml to JSON on the way to jsTree
 </template>
 
 <template match="concept">
+ <if test="parent::role-restr-map">
+  <text>          sem_feats: {
+  </text>
+ </if>
  <text>          inherit: '</text>
  <value-of select="@name" />
- <text>',
+ <text>'</text>
+ <if test="parent::role-restr-map">
+  <text>
+          }</text>
+ </if>
+ <text>,
 </text>
 </template> 
 
