@@ -58,7 +58,115 @@
      <div class="comment" id="trips-concept-comment"></div>
      roles:
      <ul id="trips-roles">
-      <li class="template"><select><option value="" disabled selected>extra role</option><option>TODO1</option><option>TODO2</option></select>
+      <li class="template">
+       <select>
+        <option value="" disabled selected>extra role
+	<!-- see LF Documentation Appendix A: Semantic Roles -->
+	<optgroup label="Core Argument Roles">
+	 <option>:agent
+	 <option>:agent1
+	 <option>:affected
+	 <option>:affected1
+	 <option>:affected-result
+	 <option>:affected-result1
+	 <option>:neutral
+	 <option>:neutral1
+	 <option>:neutral2
+	 <option>:experiencer
+	 <option>:formal
+	 <option>:formal1
+	 <option>:beneficiary
+	<optgroup label="Relational Causal Relations">
+	 <option>:result
+	 <option>:source
+	 <option>:transient-result
+	 <option>:method
+	 <option>:reason
+	 <option>:manner
+	<optgroup label="Relations of Locating">
+	 <option>:location
+	 <option>:time
+	 <option>:extent
+	 <option>:orientation
+	 <option>:frequency
+	<optgroup label="General Modification Relations">
+	 <option>:mod
+	 <option>:assoc-with
+	 <option>:assoc-poss
+	 <option>:identified-as
+	<optgroup label="Adjective/Adverb Roles">
+	 <option>:figure
+	 <option>:figure1
+	 <option>:ground
+	 <option>:ground1
+	 <option>:scale
+	 <option>:standard
+	 <option>:extent
+	 <option>:degree
+	<optgroup label="Time/Date">
+	 <option>:year
+	 <option>:month
+	 <option>:day
+	 <option>:dow
+	 <option>:am-pm
+	 <option>:hour
+	 <option>:minute
+	 <option>:century
+	 <option>:era
+	 <option>:phase
+	<optgroup label="Speech Acts">
+	 <option>:content
+	 <option>:focus
+	 <option>:mod
+	<optgroup label="Sequences">
+	 <option>:sequence
+	 <option>:sequence1
+	 <option>:sequence2
+	<optgroup label="Quantities">
+	 <option>:quantity
+	 <option>:unit
+	 <option>:amount
+	<optgroup label="Quantifier/Specifier Specific Roles">
+	 <option>:proform
+	 <option>:quan
+	 <option>:refset
+	 <option>:name-of
+	<optgroup label="Tense, Aspect, and Modality Roles">
+	 <option>:negation
+	 <option>:tense
+	 <option>:progr
+	 <option>:perf
+	 <option>:passive
+	 <option>:modality
+	<optgroup label="???">
+	 <!-- these appear in LF Documentation, but not in Appendix A -->
+	 <option>:except
+	 <option>:neg
+	 <option>:qualification
+	 <option>:refobject
+	 <option>:size
+	 <option>:suchthat
+	 <option>:value
+	 <!-- these are in DeepSemLex's list of roles -->
+	 <option>:along
+	 <option>:arg0
+	 <option>:arg1
+	 <option>:between
+	 <option>:cause
+	 <option>:cognizer
+	 <option>:contents
+	 <option>:criterion
+	 <option>:donor
+	 <option>:effect
+	 <option>:goal
+	 <option>:goal-reln
+	 <option>:goods
+	 <option>:money
+	 <option>:path
+	 <option>:position-reln
+	 <option>:source-reln
+	 <option>:stimulus
+	</select>
       <li><button id="add-trips-role">+</button> <button id="rem-trips-role">-</button>
      </ul>
      words: <span id="trips-words"></span><br>
