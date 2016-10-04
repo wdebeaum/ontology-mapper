@@ -7,13 +7,34 @@
 
 <!--
 dsl-to-json.xsl - convert trips-ont-dsl.xml to JSON on the way to jsTree
+(or dsl/ONT::*.xml to JSON)
+Note: this is not meant to be a general transformation, it only works for these
+files in this situation.
   -->
 
 <import href="str.replace.template.xsl" />
 
 <output method="text" encoding="UTF-8" />
 
+<param name="senses-only" select="false()" />
+
 <template match="text()|@*" />
+
+<template name="escape">
+ <param name="str" />
+ <!-- TODO? control chars \b \f \n \r \t -->
+ <call-template name="str:replace">
+  <with-param name="search" select="'&quot;'" />
+  <with-param name="replace" select="'\&quot;'" />
+  <with-param name="string">
+   <call-template name="str:replace">
+    <with-param name="search" select="'\'" />
+    <with-param name="replace" select="'\\'" />
+    <with-param name="string" select="$str" />
+   </call-template>
+  </with-param>
+ </call-template>
+</template>
 
 <template match="relation[@label='inherit']">
  <text>    inherit: '</text>
@@ -192,11 +213,55 @@ dsl-to-json.xsl - convert trips-ont-dsl.xml to JSON on the way to jsTree
 </text>
 </template>
 
-<template match="/dsl">
- <text>{
+<template match="sense">
+ <text>  {</text>
+ <for-each select="morph"><!-- don't expect more than one, but just in case -->
+  <text> pos: '</text>
+  <value-of select="pos/@pos" />
+  <text>', word: '</text>
+  <value-of select="word/@first-word" />
+  <if test="word/@remaining-words">
+   <text> </text>
+   <value-of select="word/@remaining-words" />
+  </if>
+  <if test="word/@particle">
+   <text> (</text>
+   <value-of select="word/@particle" />
+   <text>)</text>
+  </if>
+  <text>', </text>
+ </for-each>
+ <if test="example">
+  <text>examples: [</text>
+  <for-each select="example">
+   <if test="position() != 1"><text>, </text></if>
+   <text>"</text>
+   <call-template name="escape">
+    <with-param name="str" select="@text" />
+   </call-template>
+   <text>"</text>
+  </for-each>
+  <text>] </text>
+ </if>
+ <text>},
 </text>
- <apply-templates select="concept" />
- <text>}</text>
+</template>
+
+<template match="/dsl">
+ <choose>
+  <when test="$senses-only">
+   <text>[
+</text>
+   <apply-templates select="sense" />
+   <text>]</text>
+  </when>
+  <otherwise>
+   <text>{
+</text>
+   <apply-templates select="concept" />
+   <text>}</text>
+  </otherwise>
+ </choose>
 </template>
 
 </stylesheet>

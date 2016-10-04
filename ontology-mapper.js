@@ -33,6 +33,14 @@ $(function() {
     ) + ')');
   }
 
+  function setXSLParameter(proc, k, v) {
+    if (window.XSLTProcessor) {
+      proc.setParameter('', k, v);
+    } else { // IE
+      proc.addParameter(k, v);
+    }
+  }
+
   function makeTripsOntTree(tripsOnt) {
     var treeNodes = {};
     // make a tree node for each ont type
@@ -106,6 +114,7 @@ $(function() {
     $.ajax('trips-ont-dsl.xml', { dataType: 'xml' }).
       done(function(tripsOntDSL) {
 	window.tripsOnt = xslTransformAndEval(dslToJSON, tripsOntDSL);
+	setXSLParameter(dslToJSON, 'senses-only', true);
 	var tree = makeTripsOntTree(tripsOnt);
 	$('#trips-tree').jstree(
 	  $.extend(true, { core: { data: tree } }, jsTreeConfig)
@@ -231,6 +240,23 @@ $(function() {
     }
   }
 
+  /* load words and examples if necessary, and then call done() */
+  function ensureSenses(conceptName, done) {
+    var concept = tripsOnt[conceptName];
+    if ('senses' in concept) {
+      done();
+    } else {
+      $.ajax('ONT%3a%3a' + conceptName + '.xml', { dataType: 'xml' }).
+	done(function(conceptDSL) {
+	  concept.senses = xslTransformAndEval(dslToJSON, conceptDSL);
+	  done();
+	}).
+	fail(function(jqXHR, textStatus, errorThrown) {
+	  console.log({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+	});
+    }
+  }
+
   function formatMaybeDisj(x) {
     return '<b>' + x.replace(/ or /g, '</b> <i>or</i> <b>') + '</b>; ';
   }
@@ -272,6 +298,27 @@ $(function() {
       var name = tripsJsTree.get_text(args.selected[0]);
       $('#trips-concept-name').text(name);
       var concept = tripsOnt[name];
+      // load words and examples from ONT::$name.xml
+      // (first clear these so they don't show the wrong values before load)
+      var examplesUl = $('#trips-examples');
+      examplesUl.empty();
+      var wordsSpan = $('#trips-words')
+      wordsSpan.empty();
+      ensureSenses(name, function() {
+	var words = [];
+	concept.senses.forEach(function(sense) {
+	  words.push(sense.word + '[' + sense.pos + ']');
+	  if ('examples' in sense) {
+	    sense.examples.forEach(function(example) {
+	      var li = $(document.createElement('li'));
+	      li.text(example);
+	      examplesUl.append(li);
+	    });
+	  }
+	});
+	wordsSpan.text(words.join(', '));
+      });
+      // get rest of details from trips-ont-dsl.xml we already loaded
       $('#trips-concept-comment').text(concept.comment || '');
       var sem_feats = {};
       var sem_frame = [];
@@ -284,7 +331,6 @@ $(function() {
 	li.attr('id', 'trips-role-' + i);
 	li.html(formatRole(roleRestrMap));
       });
-      // TODO words/examples
       $('#trips-details').show();
     } else {
       $('#trips-details').hide();

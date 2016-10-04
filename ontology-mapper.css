@@ -88,3 +88,10 @@ input:invalid {
   width: calc(100% - 1em - 4px);
   margin-left: 1em;
 }
+
+#trips-words {
+  display: inline-block;
+  white-space: normal;
+  width: calc(100% - 6em);
+  vertical-align: top;
+}
