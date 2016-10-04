@@ -79,7 +79,6 @@ $(function() {
    * and return the copy.
    */
   function addLiBeforeTemplate(ul) {
-    console.log(ul);
     var template = $(ul).find('li.template');
     var newLi = template.clone();
     newLi.removeClass('template');
@@ -96,6 +95,35 @@ $(function() {
       oldLi.remove();
       return oldLi;
     }
+  }
+
+  var svgNS = "http://www.w3.org/2000/svg";
+  function updateConceptHandles(side, opts) {
+    if (!opts) { opts = {}; }
+    var mapWidth = $('.map')[0].offsetWidth - 4; // FIXME see CSS
+    var jsTree = window[side + 'JsTree'];
+    var handlesG = $('#' + side + '-concept-handles');
+    if (opts.scroll) {
+      var scroll = $('#' + side + '-tree').scrollTop();
+      handlesG.attr('transform', 'translate(0, ' + (-scroll) + ')');
+    }
+    if (opts.openClose) {
+      handlesG.empty();
+      // iterate over visible nodes
+      for (var node = jsTree.firstNode; node; node = jsTree.get_next_dom(node)[0]) {
+	console.log(node.id);
+	var handle = document.createElementNS(svgNS, 'circle');
+	handle.setAttribute('class', 'handle');
+	handle.setAttribute('r', '1ex');
+	handle.setAttribute('cx', ('trips' === side ? 0 : mapWidth));
+	handle.setAttribute('cy', node.offsetTop + node.firstChild.offsetHeight/2);
+	handle.setAttribute('id', node.id + '__handle');
+	handlesG.append(handle);
+      }
+    }
+    var linesG = $('concept-lines');
+    linesG.empty();
+    // TODO re-add lines
   }
 
   var jsTreeConfig = {
@@ -120,6 +148,9 @@ $(function() {
 	  $.extend(true, { core: { data: tree } }, jsTreeConfig)
 	);
 	window.tripsJsTree = $.jstree.reference('trips-tree');
+	$('#trips-tree').on('loaded.jstree', function() {
+	  tripsJsTree.firstNode = $('#' + tree.id)[0];
+	});
       }).
       fail(function(jqXHR, textStatus, errorThrown) {
 	console.log({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
@@ -128,6 +159,7 @@ $(function() {
 
   var tree = [
     { text: 'root',
+      id: 'your__root',
       state: { opened: true },
       children: [
         { text: 'foo',
@@ -155,6 +187,9 @@ $(function() {
     }, jsTreeConfig)
   );
   window.yourJsTree = $.jstree.reference('#your-tree');
+  $('#your-tree').on('loaded.jstree', function() {
+    yourJsTree.firstNode = $('#your__root')[0];
+  });
 
   /* Modify childFeats to include any parts of parentFeats that it doesn't
    * override.
@@ -347,6 +382,27 @@ $(function() {
     } else {
       $('#your-details').hide();
     }
+  });
+
+  $('#trips-tree').on('after_open.jstree after_close.jstree', function(evt) {
+    console.log(evt);
+    updateConceptHandles('trips', { openClose: true });
+    return true;
+  });
+
+  $('#your-tree').on('after_open.jstree after_close.jstree', function(evt) {
+    updateConceptHandles('your', { openClose: true });
+    return true;
+  });
+
+  $('#trips-tree').on('scroll', function(evt) {
+    updateConceptHandles('trips', { scroll: true });
+    return true;
+  });
+
+  $('#your-tree').on('scroll', function(evt) {
+    updateConceptHandles('your', { scroll: true });
+    return true;
   });
 
   $('#trips-concept-search').on('submit', function(evt) {

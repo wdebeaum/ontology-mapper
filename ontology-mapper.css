@@ -95,3 +95,8 @@ input:invalid {
   width: calc(100% - 6em);
   vertical-align: top;
 }
+
+.handle {
+  fill-color: black;
+  stroke: none;
+}
