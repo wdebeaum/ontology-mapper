@@ -59,8 +59,7 @@
      <div class="comment" id="trips-concept-comment"></div>
      roles:
      <ul id="trips-roles">
-      <li class="template">
-       <select>
+      <li class="template"><select> <!-- NB: don't add whitespace in there -->
         <option value="" disabled selected>extra role
 	<!-- see LF Documentation Appendix A: Semantic Roles -->
 	<optgroup label="Core Argument Roles">
@@ -179,7 +178,9 @@
 
    <td class="map">
     <svg id="role-mapping">
-     <!-- TODO -->
+     <g id="role-lines"></g>
+     <g id="trips-role-handles" transform="translate(0,0)"></g>
+     <g id="your-role-handles" transform="translate(0,0)"></g>
     </svg>
    </td>
 

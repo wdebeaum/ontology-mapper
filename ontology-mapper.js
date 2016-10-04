@@ -98,26 +98,47 @@ $(function() {
   }
 
   var svgNS = "http://www.w3.org/2000/svg";
-  function updateConceptHandles(side, opts) {
+  function updateMap(side, conceptOrRole, opts) {
     if (!opts) { opts = {}; }
     var mapWidth = $('.map')[0].offsetWidth - 4; // FIXME see CSS
-    var jsTree = window[side + 'JsTree'];
-    var handlesG = $('#' + side + '-concept-handles');
+    var handlesG = $('#' + side + '-' + conceptOrRole + '-handles');
     if (opts.scroll) {
-      var scroll = $('#' + side + '-tree').scrollTop();
+      var scroll =
+          $('#' + side + '-' +
+		  (('concept' === conceptOrRole) ? 'tree' : 'details')
+	  ).scrollTop();
       handlesG.attr('transform', 'translate(0, ' + (-scroll) + ')');
+    }
+    // iterate over (visible) nodes
+    var firstNode;
+    var hasNext;
+    var nextNode;
+    switch (conceptOrRole) {
+      case 'concept':
+	var jsTree = window[side + 'JsTree'];
+        firstNode = jsTree.firstNode;
+	hasNext = function(node) { return node; };
+	nextNode = function(node) { return jsTree.get_next_dom(node)[0]; };
+	break;
+      case 'role':
+        firstNode = $('#' + side + '-roles li:first-child')[0];
+	hasNext = function(node) { return ('template' !== node.className); };
+	nextNode = function(node) { return node.nextSibling; };
+	break;
+      default:
+        throw new Error('WTF');
     }
     if (opts.openClose) {
       handlesG.empty();
-      // iterate over visible nodes
-      for (var node = jsTree.firstNode; node; node = jsTree.get_next_dom(node)[0]) {
-	console.log(node.id);
+      for (var node = firstNode; hasNext(node); node = nextNode(node)) {
 	var handle = document.createElementNS(svgNS, 'circle');
 	handle.setAttribute('class', 'handle');
 	handle.setAttribute('r', '1ex');
 	handle.setAttribute('cx', ('trips' === side ? 0 : mapWidth));
 	handle.setAttribute('cy', node.offsetTop + node.firstChild.offsetHeight/2);
-	handle.setAttribute('id', node.id + '__handle');
+	if (node.id) {
+	  handle.setAttribute('id', node.id + '__handle');
+	}
 	handlesG.append(handle);
       }
     }
@@ -370,6 +391,10 @@ $(function() {
     } else {
       $('#trips-details').hide();
     }
+    // let things render before updating map
+    setTimeout(function() {
+      updateMap('trips', 'role', { openClose: true });
+    }, 0);
   });
 
   $('#your-tree').on('changed.jstree', function(evt, args) {
@@ -382,26 +407,36 @@ $(function() {
     } else {
       $('#your-details').hide();
     }
+    updateMap('your', 'role', { openClose: true });
   });
 
   $('#trips-tree').on('after_open.jstree after_close.jstree', function(evt) {
-    console.log(evt);
-    updateConceptHandles('trips', { openClose: true });
+    updateMap('trips', 'concept', { openClose: true });
     return true;
   });
 
   $('#your-tree').on('after_open.jstree after_close.jstree', function(evt) {
-    updateConceptHandles('your', { openClose: true });
+    updateMap('your', 'concept', { openClose: true });
     return true;
   });
 
   $('#trips-tree').on('scroll', function(evt) {
-    updateConceptHandles('trips', { scroll: true });
+    updateMap('trips', 'concept', { scroll: true });
     return true;
   });
 
   $('#your-tree').on('scroll', function(evt) {
-    updateConceptHandles('your', { scroll: true });
+    updateMap('your', 'concept', { scroll: true });
+    return true;
+  });
+
+  $('#trips-details').on('scroll', function(evt) {
+    updateMap('trips', 'role', { scroll: true });
+    return true;
+  });
+
+  $('#your-details').on('scroll', function(evt) {
+    updateMap('your', 'role', { scroll: true });
     return true;
   });
 
@@ -437,13 +472,18 @@ $(function() {
     yourJsTree.select_node(newNodeID);
   });
 
-  $('#add-trips-role, #add-your-role, #add-example').on('click', function(evt) {
+  $('#add-trips-role, #add-your-role, #add-example, #rem-trips-role, #rem-your-role, #rem-example').on('click', function(evt) {
     var ul = evt.target.parentNode.parentNode;
-    addLiBeforeTemplate(ul);
-  });
-
-  $('#rem-trips-role, #rem-your-role, #rem-example').on('click', function(evt) {
-    var ul = evt.target.parentNode.parentNode;
-    remLiBeforeTemplate(ul);
+    if (/^add-/.test(this.id)) {
+      addLiBeforeTemplate(ul);
+    } else {
+      remLiBeforeTemplate(ul);
+    }
+    if (/-roles$/.test(ul.id)) {
+      var side = (/^your-/.test(ul.id) ? 'your' : 'trips');
+      setTimeout(function() {
+	updateMap(side, 'role', { openClose: true });
+      }, 0);
+    }
   });
 });
