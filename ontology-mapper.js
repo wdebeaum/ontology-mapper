@@ -24,6 +24,15 @@ $(function() {
     }
   }
 
+  function xslTransformAndEval(proc, doc) {
+    return eval('(' + (
+      window.XSLTProcessor ?
+	proc.transformToDocument(doc).documentElement.innerHTML
+      : // IE
+	doc.transformNode(proc)
+    ) + ')');
+  }
+
   function makeTripsOntTree(tripsOnt) {
     var treeNodes = {};
     // make a tree node for each ont type
@@ -91,15 +100,12 @@ $(function() {
     }
   };
 
-  loadXSL('dsl-to-json.xsl', function(dslToJSON) {
+  var dslToJSON;
+  loadXSL('dsl-to-json.xsl', function(dslToJSONarg) {
+    dslToJSON = dslToJSONarg;
     $.ajax('trips-ont-dsl.xml', { dataType: 'xml' }).
       done(function(tripsOntDSL) {
-	window.tripsOnt = eval('(' + (
-	  window.XSLTProcessor ?
-	    dslToJSON.transformToDocument(tripsOntDSL).documentElement.innerHTML
-	  : // IE
-	    tripsOntDSL.transformNode(dslToJSON)
-	) + ')');
+	window.tripsOnt = xslTransformAndEval(dslToJSON, tripsOntDSL);
 	var tree = makeTripsOntTree(tripsOnt);
 	$('#trips-tree').jstree(
 	  $.extend(true, { core: { data: tree } }, jsTreeConfig)
