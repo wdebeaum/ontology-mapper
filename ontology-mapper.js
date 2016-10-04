@@ -45,7 +45,7 @@ $(function() {
     var treeNodes = {};
     // make a tree node for each ont type
     for (ontType in tripsOnt) {
-      treeNodes[ontType] = { text: ontType, children: [] };
+      treeNodes[ontType] = { id: 'ont__' + ontType, text: ontType, children: [] };
     }
     // build children lists from inherit relations
     for (ontType in tripsOnt) {
@@ -347,6 +347,26 @@ $(function() {
     } else {
       $('#your-details').hide();
     }
+  });
+
+  $('#trips-concept-search').on('submit', function(evt) {
+    evt.preventDefault();
+    var search = $(this['search']).val();
+    console.log('searching trips ontology for concept named ' + search);
+    if (search in tripsOnt) {
+      tripsJsTree.deselect_all();
+      tripsJsTree.select_node('ont__' + search);
+      $('#ont__' + search)[0].scrollIntoView(true);
+    } else {
+      alert(search + ' not found');
+    }
+  });
+
+  $('#your-concept-search').on('submit', function(evt) {
+    evt.preventDefault();
+    var search = $(this['search']).val();
+    console.log('searching your ontology for concept named ' + search);
+    // TODO how to find concepts in your tree? AFAIK can't change IDs of tree nodes, so can't do the same thing as the trips side
   });
 
   $('#rem-concept').on('click', function() {
