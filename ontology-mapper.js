@@ -151,10 +151,20 @@ $(function() {
    * override.
    */
   function mergeFeats(childFeats, parentFeats) {
-    // TODO
-    // .inherit
-    //   ' or '
-    // .features
+    if (('inherit' in parentFeats) && !('inherit' in childFeats)) {
+      childFeats.inherit = parentFeats.inherit;
+    }
+    if ('features' in parentFeats) {
+      if ('features' in childFeats) {
+	for (var k in parentFeats.features) {
+	  if (!(k in childFeats.features)) {
+	    childFeats.features[k] = parentFeats.features[k];
+	  }
+	}
+      } else {
+	childFeats.features = $.extend(true, {}, parentFeats.features);
+      }
+    }
   }
 
   /* Fill semFeatsOut={} and semFrameOut=[] by going up the hierarchy from
@@ -168,7 +178,7 @@ $(function() {
     // fill semFrameOut
     if ('sem_frame' in concept) {
       concept.sem_frame.forEach(function(newRoleRestrMap) {
-	var newRoles = newRoleRestrMap.roles.split(' ')[0];
+	var newRoles = newRoleRestrMap.roles.split(' ');
 	var oldRoleRestrMap;
 	semFrameOut.forEach(function(m) {
 	  if (m.roles.split(' ').includes(newRoles[0])) {
