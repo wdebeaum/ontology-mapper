@@ -59,7 +59,8 @@
      <div class="comment" id="trips-concept-comment"></div>
      roles:
      <ul id="trips-roles">
-      <li class="template"><select> <!-- NB: don't add whitespace in there -->
+      <!-- NB: don't add whitespace between li and select -->
+      <li class="template" id="trips-role-template"><select>
         <option value="" disabled selected>extra role
 	<!-- see LF Documentation Appendix A: Semantic Roles -->
 	<optgroup label="Core Argument Roles">
@@ -192,13 +193,13 @@
      </label><br>
      roles:
      <ul id="your-roles">
-      <li class="template"><input type="text" placeholder="role name" required> <input type="text" placeholder="type restriction">
+      <li class="template" id="your-role-template"><input type="text" placeholder="role name" required> <input type="text" placeholder="type restriction">
       <li><button id="add-your-role">+</button> <button id="rem-your-role">-</button>
      </ul>
      <label>words: <input id="your-words" type="text" placeholder="comma-separated list"></label><br>
      examples:
      <ul id="your-examples">
-      <li class="template"><input type="text" required>
+      <li class="template" id="your-example-template"><input type="text" required>
       <li><button id="add-example">+</button> <button id="rem-example">-</button>
      </ul>
     </div>

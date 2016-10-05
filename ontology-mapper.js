@@ -80,9 +80,11 @@ $(function() {
    */
   function addLiBeforeTemplate(ul) {
     var template = $(ul).find('li.template');
+    var id = template.attr('id');
     var newLi = template.clone();
     newLi.removeClass('template');
     newLi.insertBefore(template);
+    newLi.attr('id', id.replace(/template/, '' + newLi.index()));
     return newLi;
   }
 
