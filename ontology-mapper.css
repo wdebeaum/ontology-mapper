@@ -100,3 +100,29 @@ input:invalid {
   fill-color: black;
   stroke: none;
 }
+
+line {
+  stroke-width: 0.1em;
+  stroke: red;
+}
+
+ul.selectable {
+  list-style-position: inside;
+  padding-left: 1.5em;
+}
+
+ul.selectable li {
+  list-style-type: circle;
+}
+
+ul.selectable li.selected {
+  list-style-type: disc;
+  /* copied from a.jstree-default.jstree-clicked */
+  background: #beebff;
+  border-radius: 2px;
+  box-shadow: inset 0 0 1px #999;
+}
+
+ul.selectable li.controls, li.controls {
+  list-style-type: square;
+}

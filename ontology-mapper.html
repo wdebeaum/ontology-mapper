@@ -58,9 +58,9 @@
      comment:
      <div class="comment" id="trips-concept-comment"></div>
      roles:
-     <ul id="trips-roles">
+     <ul id="trips-roles" class="selectable">
       <!-- NB: don't add whitespace between li and select -->
-      <li class="template" id="trips-role-template"><select>
+      <li class="template" id="trips-role-template" onclick="selectLi(event)"><select>
         <option value="" disabled selected>extra role
 	<!-- see LF Documentation Appendix A: Semantic Roles -->
 	<optgroup label="Core Argument Roles">
@@ -168,7 +168,7 @@
 	 <option>:source-reln
 	 <option>:stimulus
 	</select>
-      <li><button id="add-trips-role">+</button> <button id="rem-trips-role">-</button>
+      <li class="controls"><button id="add-trips-role">+</button> <button id="rem-trips-role">-</button>
      </ul>
      words: <span id="trips-words"></span><br>
      examples:
@@ -192,15 +192,15 @@
      <textarea class="comment" id="your-concept-comment"></textarea>
      </label><br>
      roles:
-     <ul id="your-roles">
-      <li class="template" id="your-role-template"><input type="text" placeholder="role name" required> <input type="text" placeholder="type restriction">
-      <li><button id="add-your-role">+</button> <button id="rem-your-role">-</button>
+     <ul id="your-roles" class="selectable">
+      <li class="template" id="your-role-template" onclick="selectLi(event)"><input type="text" placeholder="role name" required> <input type="text" placeholder="type restriction">
+      <li class="controls"><button id="add-your-role">+</button> <button id="rem-your-role">-</button>
      </ul>
      <label>words: <input id="your-words" type="text" placeholder="comma-separated list"></label><br>
      examples:
      <ul id="your-examples">
       <li class="template" id="your-example-template"><input type="text" required>
-      <li><button id="add-example">+</button> <button id="rem-example">-</button>
+      <li class="controls"><button id="add-example">+</button> <button id="rem-example">-</button>
      </ul>
     </div>
    </td>

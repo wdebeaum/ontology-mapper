@@ -99,7 +99,60 @@ $(function() {
     }
   }
 
+  function selectedLi(ul) {
+    return ul.children().filter('.selected');
+  }
+
+  /* onclick handler for selectable <li> elements */
+  window.selectLi = function(evt) {
+    var li = $(evt.currentTarget);
+    var ul = li.parent();
+    selectedLi(ul).removeClass('selected');
+    li.addClass('selected');
+    return true;
+  };
+
   var svgNS = "http://www.w3.org/2000/svg";
+
+  function addLine(linesG, tripsID, yourID) {
+    var tripsHandle = $('#' + tripsID + '__handle');
+    var yourHandle = $('#' + yourID + '__handle');
+    var line = $(document.createElementNS(svgNS, 'line'));
+    var tripsScroll;
+    var yourScroll;
+    switch (linesG.attr('id')) {
+      case 'concept-lines':
+	tripsScroll = $('#trips-tree').scrollTop();
+	yourScroll = $('#your-tree').scrollTop();
+	break;
+      case 'role-lines':
+	tripsScroll = $('#trips-details').scrollTop();
+	yourScroll = $('#your-details').scrollTop();
+	break;
+      default:
+        throw new Error('WTF');
+    }
+    line.attr('x1', tripsHandle.attr('cx'));
+    line.attr('y1', parseInt(tripsHandle.attr('cy')) - tripsScroll);
+    line.attr('x2', yourHandle.attr('cx'));
+    line.attr('y2', parseInt(yourHandle.attr('cy')) - yourScroll);
+    line.attr('trips-handle', tripsID + '__handle');
+    line.attr('your-handle', yourID + '__handle');
+    line.attr('id', tripsID + '__to__' + yourID);
+    linesG.append(line);
+  }
+
+  function remLine(tripsID, yourID) {
+    $('#' + tripsID + '__to__' + yourID).remove();
+  }
+
+  function scrollLine(side, treeOrDetails, line) {
+    var coord = ('trips' === side ? 'y1' : 'y2');
+    var scroll = $('#' + side + '-' + treeOrDetails).scrollTop();
+    var handle = $('#' + line.attr(side + '-handle'));
+    line.attr(coord, parseInt(handle.attr('cy')) - scroll);
+  }
+
   function updateMap(side, conceptOrRole, opts) {
     if (!opts) { opts = {}; }
     var mapWidth = $('.map')[0].offsetWidth - 4; // FIXME see CSS
@@ -144,9 +197,15 @@ $(function() {
 	handlesG.append(handle);
       }
     }
-    var linesG = $('concept-lines');
-    linesG.empty();
-    // TODO re-add lines
+    var linesG = $('#' + conceptOrRole + '-lines');
+    if (opts.openClose) {
+      linesG.empty();
+      // TODO re-add lines
+    } else if (opts.scroll) {
+      linesG.children().each(function(i, line) {
+	scrollLine(side, ('concept' === conceptOrRole ? 'tree' : 'details'), $(line));
+      });
+    }
   }
 
   var jsTreeConfig = {
@@ -387,6 +446,7 @@ $(function() {
 	var li = $(document.createElement('li'));
 	li.insertBefore(template);
 	li.attr('id', 'trips-role-' + i);
+	li.on('click', selectLi);
 	li.html(formatRole(roleRestrMap));
       });
       $('#trips-details').show();
@@ -472,6 +532,34 @@ $(function() {
     // TODO add blank details
     yourJsTree.deselect_all();
     yourJsTree.select_node(newNodeID);
+  });
+
+  $('#add-concept-mapping, #rem-concept-mapping').on('click', function(evt) {
+    var tripsIDs = tripsJsTree.get_selected();
+    var yourIDs = yourJsTree.get_selected();
+    if (tripsIDs.length != 1 || yourIDs.length != 1) {
+      alert('Select one TRIPS concept and one of your concepts before clicking the add/remove mapping buttons.');
+      return;
+    }
+    if (/^add-/.test(this.id)) {
+      addLine($('#concept-lines'), tripsIDs[0], yourIDs[0]);
+    } else {
+      remLine(tripsIDs[0], yourIDs[0]);
+    }
+  });
+
+  $('#add-role-mapping, #rem-role-mapping').on('click', function(evt) {
+    var tripsLIs = selectedLi($('#trips-roles'));
+    var yourLIs = selectedLi($('#your-roles'));
+    if (tripsLIs.length != 1 || yourLIs.length != 1) {
+      alert('Select a TRIPS role and one of your roles before clicking the add/remove mapping buttons.');
+      return;
+    }
+    if (/^add-/.test(this.id)) {
+      addLine($('#role-lines'), tripsLIs[0].id, yourLIs[0].id);
+    } else {
+      remLine(tripsLIs[0].id, yourLIs[0].id);
+    }
   });
 
   $('#add-trips-role, #add-your-role, #add-example, #rem-trips-role, #rem-your-role, #rem-example').on('click', function(evt) {
