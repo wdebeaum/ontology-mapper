@@ -53,11 +53,11 @@
   </tr>
   <tr id="details">
    <td colspan="2">
-    <div id="trips-details">
-     name: <span id="trips-concept-name"></span><br>
-     comment:
+    <dl id="trips-details">
+     <dt class="inline">name<dd><span id="trips-concept-name"></span>
+     <dt>comment<dd>
      <div class="comment" id="trips-concept-comment"></div>
-     roles:
+     <dt>roles<dd>
      <ul id="trips-roles" class="selectable">
       <!-- NB: don't add whitespace between li and select -->
       <li class="template" id="trips-role-template" onclick="selectLi(event)"><select>
@@ -170,11 +170,11 @@
 	</select>
       <li class="controls"><button id="add-trips-role">+</button> <button id="rem-trips-role">-</button>
      </ul>
-     words: <span id="trips-words"></span><br>
-     examples:
+     <dt class="inline">words<dd id="trips-words">
+     <dt>examples<dd>
      <ul id="trips-examples">
      </ul>
-    </div>
+    </dl>
    </td>
 
    <td class="map">
@@ -186,23 +186,24 @@
    </td>
 
    <td colspan="2">
-    <div id="your-details">
-     <label>name: <input id="your-concept-name" type="text" required></label><br>
-     <label>comment:<br>
+    <dl id="your-details">
+     <dt class="inline"><label for="your-concept-name">name</label><dd>
+     <input id="your-concept-name" type="text" required>
+     <dt><label for="your-concept-comment">comment<dd>
      <textarea class="comment" id="your-concept-comment"></textarea>
-     </label><br>
-     roles:
+     <dt>roles<dd>
      <ul id="your-roles" class="selectable">
       <li class="template" id="your-role-template" onclick="selectLi(event)"><input type="text" placeholder="role name" required> <input type="text" placeholder="type restriction">
       <li class="controls"><button id="add-your-role">+</button> <button id="rem-your-role">-</button>
      </ul>
-     <label>words: <input id="your-words" type="text" placeholder="comma-separated list"></label><br>
-     examples:
+     <dt class="inline"><label for="your-words">words</label><dd>
+     <input id="your-words" type="text" placeholder="comma-separated list">
+     <dt>examples<dd>
      <ul id="your-examples">
       <li class="template" id="your-example-template"><input type="text" required>
       <li class="controls"><button id="add-example">+</button> <button id="rem-example">-</button>
      </ul>
-    </div>
+    </dl>
    </td>
   </tr>
  </table>

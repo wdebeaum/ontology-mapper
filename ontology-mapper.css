@@ -36,9 +36,30 @@ h1, h2, h3 {
   vertical-align: top;
 }
 
-#trees > td > div, #details > td > div {
+#trees > td > div, #details > td > dl {
   height: calc(50vh - 3em - 3px);
   overflow: auto;
+}
+
+dl {
+  margin: 0;
+}
+
+dt {
+  font-weight: bold;
+}
+
+dt.inline {
+  display: inline;
+}
+
+dt:after {
+  content: ': ';
+}
+
+dd {
+  display: inline;
+  margin-left: 0;
 }
 
 td.map {
