@@ -242,7 +242,7 @@ $(function() {
       });
   });
 
-  var tree = [
+  /*var tree = [
     { text: 'root',
       id: 'your__root',
       state: { opened: true },
@@ -258,14 +258,14 @@ $(function() {
 	{ text: 'baz' }
       ]
     }
-  ];
+  ];*/
   /*$('#trips-tree').jstree(
     $.extend(true, { core: { data: tree } }, jsTreeConfig)
   );*/
   $('#your-tree').jstree(
     $.extend(true, {
       core: {
-	data: tree,
+	data: [], //tree,
 	check_callback: true
       },
       plugins: ['dnd']
@@ -580,4 +580,30 @@ $(function() {
       }, 0);
     }
   });
+
+  /* your details onchange handlers */
+
+  $('#your-concept-name').on('change', function(evt) {
+    // TODO change name of selected concept
+  });
+
+  $('#your-comment').on('change', function(evt) {
+    // TODO
+  });
+
+  window.changeYourRoleName = function(evt) {
+    // TODO
+  };
+
+  window.changeYourRoleRestr = function(evt) {
+    // TODO
+  };
+
+  $('#your-words').on('change', function(evt) {
+    // TODO
+  });
+
+  window.changeYourExample = function(evt) {
+    // TODO
+  };
 });

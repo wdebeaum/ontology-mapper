@@ -193,14 +193,14 @@
      <textarea class="comment" id="your-concept-comment"></textarea>
      <dt>roles<dd>
      <ul id="your-roles" class="selectable">
-      <li class="template" id="your-role-template" onclick="selectLi(event)"><input type="text" placeholder="role name" required> <input type="text" placeholder="type restriction">
+      <li class="template" id="your-role-template" onclick="selectLi(event)"><input type="text" onchange="changeYourRoleName(event)" placeholder="role name" required> <input type="text" onchange="changeYourRoleRestr(event)" placeholder="type restriction">
       <li class="controls"><button id="add-your-role">+</button> <button id="rem-your-role">-</button>
      </ul>
      <dt class="inline"><label for="your-words">words</label><dd>
      <input id="your-words" type="text" placeholder="comma-separated list">
      <dt>examples<dd>
      <ul id="your-examples">
-      <li class="template" id="your-example-template"><input type="text" required>
+      <li class="template" id="your-example-template"><input type="text" onchange="changeYourExample(event)" required>
       <li class="controls"><button id="add-example">+</button> <button id="rem-example">-</button>
      </ul>
     </dl>
