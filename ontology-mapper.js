@@ -272,6 +272,8 @@ $(function() {
     }, jsTreeConfig)
   );
   window.yourJsTree = $.jstree.reference('#your-tree');
+  window.yourOntByName = {};
+  window.yourOntById = {};
   $('#your-tree').on('loaded.jstree', function() {
     yourJsTree.firstNode = $('#your__root')[0];
     updateMap('your', 'concept', { openClose: true });
@@ -466,9 +468,12 @@ $(function() {
   $('#your-tree').on('changed.jstree', function(evt, args) {
     // selection changed
     if (args.selected.length == 1) {
-      var name = yourJsTree.get_text(args.selected[0]);
-      $('#your-concept-name').val(name);
-      // TODO fill other details
+      var concept = yourOntById[args.selected[0]];
+      $('#your-concept-name').val(concept.name);
+      $('#your-concept-comment').val(concept.comment);
+      // TODO roles
+      $('#your-words').val(concept.words.join(', '));
+      // TODO examples
       $('#your-details').show();
     } else {
       $('#your-details').hide();
@@ -523,7 +528,14 @@ $(function() {
     evt.preventDefault();
     var search = $(this['search']).val();
     console.log('searching your ontology for concept named ' + search);
-    // TODO how to find concepts in your tree? AFAIK can't change IDs of tree nodes, so can't do the same thing as the trips side
+    if (search in yourOntByName) {
+      var id = yourOntByName[search].id;
+      yourJsTree.deselect_all();
+      yourJsTree.select_node(id);
+      $('#' + id)[0].scrollIntoView(true);
+    } else {
+      alert(search + ' not found');
+    }
   });
 
   $('#rem-concept').on('click', function() {
@@ -532,8 +544,16 @@ $(function() {
   });
 
   $('#add-concept').on('click', function() {
+    var concept = {
+      name: '',
+      comment: '',
+      roles: [],
+      words: [],
+      examples: []
+    };
     var newNodeID = yourJsTree.create_node(null, '(new concept)');
-    // TODO add blank details
+    concept.id = newNodeID;
+    yourOntById[newNodeID] = concept;
     yourJsTree.deselect_all();
     yourJsTree.select_node(newNodeID);
   });
@@ -581,29 +601,42 @@ $(function() {
     }
   });
 
-  /* your details onchange handlers */
+  /* your details oninput handlers */
 
-  $('#your-concept-name').on('change', function(evt) {
-    // TODO change name of selected concept
+  $('#your-concept-name').on('input', function(evt) {
+    var id = yourJsTree.get_selected();
+    var concept = yourOntById[id];
+    delete yourOntByName[concept.name];
+    concept.name = $(this).val();
+    yourJsTree.set_text(id, concept.name);
+    yourOntByName[concept.name] = concept;
   });
 
-  $('#your-comment').on('change', function(evt) {
-    // TODO
+  $('#your-concept-comment').on('input', function(evt) {
+    console.log('saving comment');
+    var id = yourJsTree.get_selected();
+    var concept = yourOntById[id];
+    concept.comment = $(this).val();
   });
 
-  window.changeYourRoleName = function(evt) {
+  window.inputYourRoleName = function(evt) {
     // TODO
   };
 
-  window.changeYourRoleRestr = function(evt) {
+  window.inputYourRoleRestr = function(evt) {
     // TODO
   };
 
-  $('#your-words').on('change', function(evt) {
-    // TODO
+  $('#your-words').on('input', function(evt) {
+    var id = yourJsTree.get_selected();
+    var concept = yourOntById[id];
+    concept.words = $(this).val().trim().split(/\s*,\s*/);
   });
 
-  window.changeYourExample = function(evt) {
+  window.inputYourExample = function(evt) {
     // TODO
   };
+
+  $('#trips-details').hide();
+  $('#your-details').hide();
 });
