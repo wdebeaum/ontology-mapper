@@ -1,4 +1,6 @@
 $(function() {
+  //var DSL_DATA_PATH = '../dsl/';
+  var DSL_DATA_PATH = 'dsl/';
 
   function loadXSL(url, done) {
     var processor = null;
@@ -221,7 +223,7 @@ $(function() {
   var dslToJSON;
   loadXSL('dsl-to-json.xsl', function(dslToJSONarg) {
     dslToJSON = dslToJSONarg;
-    $.ajax('trips-ont-dsl.xml', { dataType: 'xml' }).
+    $.ajax(DSL_DATA_PATH + 'trips-ont-dsl.xml', { dataType: 'xml' }).
       done(function(tripsOntDSL) {
 	window.tripsOnt = xslTransformAndEval(dslToJSON, tripsOntDSL);
 	setXSLParameter(dslToJSON, 'senses-only', true);
@@ -232,6 +234,7 @@ $(function() {
 	window.tripsJsTree = $.jstree.reference('trips-tree');
 	$('#trips-tree').on('loaded.jstree', function() {
 	  tripsJsTree.firstNode = $('#' + tree.id)[0];
+	  updateMap('trips', 'concept', { openClose: true });
 	});
       }).
       fail(function(jqXHR, textStatus, errorThrown) {
@@ -271,6 +274,7 @@ $(function() {
   window.yourJsTree = $.jstree.reference('#your-tree');
   $('#your-tree').on('loaded.jstree', function() {
     yourJsTree.firstNode = $('#your__root')[0];
+    updateMap('your', 'concept', { openClose: true });
   });
 
   /* Modify childFeats to include any parts of parentFeats that it doesn't
@@ -363,7 +367,7 @@ $(function() {
     if ('senses' in concept) {
       done();
     } else {
-      $.ajax('ONT%3a%3a' + conceptName + '.xml', { dataType: 'xml' }).
+      $.ajax(DSL_DATA_PATH + 'ONT%3a%3a' + conceptName + '.xml', { dataType: 'xml' }).
 	done(function(conceptDSL) {
 	  concept.senses = xslTransformAndEval(dslToJSON, conceptDSL);
 	  done();
