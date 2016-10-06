@@ -143,10 +143,7 @@ $(function() {
     line.attr('your-handle', yourID + '__handle');
     line.attr('id', tripsID + '__to__' + yourID);
     linesG.append(line);
-  }
-
-  function remLine(tripsID, yourID) {
-    $('#' + tripsID + '__to__' + yourID).remove();
+    return line;
   }
 
   function scrollLine(side, treeOrDetails, line) {
@@ -242,26 +239,6 @@ $(function() {
       });
   });
 
-  /*var tree = [
-    { text: 'root',
-      id: 'your__root',
-      state: { opened: true },
-      children: [
-        { text: 'foo',
-	  state: { opened: false },
-	  children: [ 'fool' ]
-	},
-	{ text: 'bar',
-	  state: { opened: true },
-	  children: ['barney', 'wilma']
-	},
-	{ text: 'baz' }
-      ]
-    }
-  ];*/
-  /*$('#trips-tree').jstree(
-    $.extend(true, { core: { data: tree } }, jsTreeConfig)
-  );*/
   $('#your-tree').jstree(
     $.extend(true, {
       core: {
@@ -271,9 +248,11 @@ $(function() {
       plugins: ['dnd']
     }, jsTreeConfig)
   );
+
   window.yourJsTree = $.jstree.reference('#your-tree');
   window.yourOntByName = {};
   window.yourOntById = {};
+
   $('#your-tree').on('loaded.jstree', function() {
     updateMap('your', 'concept', { openClose: true });
   });
@@ -591,7 +570,9 @@ $(function() {
       comment: '',
       roles: [],
       words: [],
-      examples: []
+      examples: [],
+      conceptMappings: [],
+      roleMappings: []
     };
     var newNodeID = yourJsTree.create_node(null, '(new concept)');
     concept.id = newNodeID;
@@ -599,6 +580,7 @@ $(function() {
     yourJsTree.deselect_all();
     yourJsTree.select_node(newNodeID);
     setTimeout(function() {
+      $('#your-concept-name').focus();
       updateMap('your', 'concept', { openClose: true });
     }, 0);
   });
@@ -610,10 +592,25 @@ $(function() {
       alert('Select one TRIPS concept and one of your concepts before clicking the add/remove mapping buttons.');
       return;
     }
+    var tripsID = tripsIDs[0];
+    var yourID = yourIDs[0];
+    var tripsConcept = tripsOnt[tripsID.replace(/^ont__/,'')];
+    var yourConcept = yourOntById[yourID];
     if (/^add-/.test(this.id)) {
-      addLine($('#concept-lines'), tripsIDs[0], yourIDs[0]);
+      var mapping = {
+	tripsConcept: tripsConcept,
+	yourConcept: yourConcept,
+	line: addLine($('#concept-lines'), tripsID, yourID)
+      };
+      yourConcept.conceptMappings.push(mapping);
     } else {
-      remLine(tripsIDs[0], yourIDs[0]);
+      var i =
+        yourConcept.conceptMappings.findIndex(function(m) {
+	  return tripsConcept === m.tripsConcept;
+	});
+      if (i < 0) { throw new Error('WTF'); }
+      var mapping = yourConcept.conceptMappings.splice(i, 1)[0];
+      mapping.line.remove();
     }
   });
 
@@ -624,10 +621,31 @@ $(function() {
       alert('Select a TRIPS role and one of your roles before clicking the add/remove mapping buttons.');
       return;
     }
+    var tripsConceptID = tripsJsTree.get_selected()[0];
+    var tripsConcept = tripsOnt[tripsConceptID.replace(/^ont__/,'')];
+    var tripsRole = tripsConcept.dynamic_sem_frame[tripsLIs.index()];
+    var yourConceptID = yourJsTree.get_selected()[0];
+    var yourConcept = yourOntById[yourConceptID];
+    var yourRole = yourConcept.roles[yourLIs.index()];
     if (/^add-/.test(this.id)) {
-      addLine($('#role-lines'), tripsLIs[0].id, yourLIs[0].id);
+      var mapping = {
+	tripsConcept: tripsConcept,
+	tripsRole: tripsRole,
+	yourConcept: yourConcept,
+	yourRole: yourRole,
+	line: addLine($('#role-lines'), tripsLIs[0].id, yourLIs[0].id)
+      };
+      yourConcept.roleMappings.push(mapping);
     } else {
-      remLine(tripsLIs[0].id, yourLIs[0].id);
+      var i =
+        yourConcept.roleMappings.findIndex(function(m) {
+	  return (tripsConcept === m.tripsConcept &&
+	          tripsRole === m.tripsRole &&
+		  yourRole === m.yourRole);
+	});
+      if (i < 0) { throw new Error('WTF'); }
+      var mapping = yourConcept.roleMappings.splice(i, 1)[0];
+      mapping.line.remove();
     }
   });
 
@@ -642,6 +660,8 @@ $(function() {
       } else if ('add-example' == this.id) {
 	newLi.on('rem', remExample);
       }
+      selectLi({ currentTarget: newLi[0] });
+      newLi.children().first().focus();
     } else {
       // FIXME disallow removing non-extra TRIPS roles
       remLiBeforeTemplate(ul);
