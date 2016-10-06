@@ -174,7 +174,7 @@ $(function() {
     switch (conceptOrRole) {
       case 'concept':
 	var jsTree = window[side + 'JsTree'];
-        firstNode = jsTree.firstNode;
+	firstNode = jsTree.element.children().children()[0]; // HACK
 	hasNext = function(node) { return node; };
 	nextNode = function(node) { return jsTree.get_next_dom(node)[0]; };
 	break;
@@ -234,7 +234,6 @@ $(function() {
 	);
 	window.tripsJsTree = $.jstree.reference('trips-tree');
 	$('#trips-tree').on('loaded.jstree', function() {
-	  tripsJsTree.firstNode = $('#' + tree.id)[0];
 	  updateMap('trips', 'concept', { openClose: true });
 	});
       }).
@@ -276,7 +275,6 @@ $(function() {
   window.yourOntByName = {};
   window.yourOntById = {};
   $('#your-tree').on('loaded.jstree', function() {
-    yourJsTree.firstNode = $('#your__root')[0];
     updateMap('your', 'concept', { openClose: true });
   });
 
@@ -520,6 +518,11 @@ $(function() {
     return true;
   });
 
+  $('#your-tree').on('move_node.jstree', function(evt, args) {
+    updateMap('your', 'concept', { openClose: true });
+    return true;
+  });
+
   $('#trips-tree').on('scroll', function(evt) {
     updateMap('trips', 'concept', { scroll: true });
     return true;
@@ -576,6 +579,9 @@ $(function() {
       delete yourOntByName[concept.name];
       // TODO remove mappings
     });
+    setTimeout(function() {
+      updateMap('your', 'concept', { openClose: true });
+    }, 0);
     $('#your-details').hide();
   });
 
@@ -592,6 +598,9 @@ $(function() {
     yourOntById[newNodeID] = concept;
     yourJsTree.deselect_all();
     yourJsTree.select_node(newNodeID);
+    setTimeout(function() {
+      updateMap('your', 'concept', { openClose: true });
+    }, 0);
   });
 
   $('#add-concept-mapping, #rem-concept-mapping').on('click', function(evt) {
