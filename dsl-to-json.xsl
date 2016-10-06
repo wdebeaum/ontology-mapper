@@ -204,9 +204,12 @@ files in this situation.
 </template> 
 
 <template match="concept[parent::dsl]">
+ <variable name="name" select="substring(@name, 6)" />
  <text>  '</text>
- <value-of select="substring(@name, 6)" />
- <text>': {
+ <value-of select="$name" />
+ <text>': { name: '</text>
+ <value-of select="$name" />
+ <text>',
 </text>
  <apply-templates />
  <text>  },
