@@ -96,6 +96,7 @@ $(function() {
     if (oldLi.length == 0) {
       return null;
     } else {
+      oldLi.trigger('rem');
       oldLi.remove();
       return oldLi;
     }
@@ -179,7 +180,7 @@ $(function() {
 	break;
       case 'role':
         firstNode = $('#' + side + '-roles li:first-child')[0];
-	hasNext = function(node) { return ('template' !== node.className); };
+	hasNext = function(node) { return !$(node).hasClass('template'); };
 	nextNode = function(node) { return node.nextSibling; };
 	break;
       default:
@@ -445,12 +446,24 @@ $(function() {
       $('#trips-concept-comment').text(concept.comment || '');
       var sem_feats = {};
       var sem_frame = [];
-      applyInheritance(concept, sem_feats, sem_frame);
+      if ('dynamic_sem_frame' in concept) {
+	sem_feats = concept.dynamic_sem_feats;
+	sem_frame = concept.dynamic_sem_frame;
+      } else {
+        applyInheritance(concept, sem_feats, sem_frame);
+	concept.dynamic_sem_feats = sem_feats;
+	concept.dynamic_sem_frame = sem_frame;
+      }
       // TODO sem_feats?
       var template = clearUlUpToTemplate($('#trips-roles'));
       sem_frame.forEach(function(roleRestrMap, i) {
 	var li = $(document.createElement('li'));
 	li.insertBefore(template);
+	if (roleRestrMap.inherited) {
+	  li.addClass('inherited');
+	} else {
+	  li.addClass('own');
+	}
 	li.attr('id', 'trips-role-' + i);
 	li.on('click', selectLi);
 	li.html(formatRole(roleRestrMap));
@@ -471,9 +484,25 @@ $(function() {
       var concept = yourOntById[args.selected[0]];
       $('#your-concept-name').val(concept.name);
       $('#your-concept-comment').val(concept.comment);
-      // TODO roles
+      var ul = $('#your-roles')[0];
+      clearUlUpToTemplate($(ul));
+      concept.roles.forEach(function(role) {
+	var newLi = addLiBeforeTemplate(ul);
+	newLi.on('rem', remYourRole);
+	$(newLi.children()[0]).val(role.name);
+	$(newLi.children()[1]).val(role.restriction);
+      });
+      setTimeout(function() {
+	updateMap('your', 'role', { openClose: true });
+      }, 0);
       $('#your-words').val(concept.words.join(', '));
-      // TODO examples
+      ul = $('#your-examples')[0];
+      clearUlUpToTemplate($(ul));
+      concept.examples.forEach(function(example) {
+	var newLi = addLiBeforeTemplate(ul);
+	newLi.on('rem', remExample);
+	$(newLi.children()[0]).val(example);
+      });
       $('#your-details').show();
     } else {
       $('#your-details').hide();
@@ -539,8 +568,15 @@ $(function() {
   });
 
   $('#rem-concept').on('click', function() {
-    yourJsTree.delete_node(yourJsTree.get_selected(true));
-    // TODO remove details for selected nodes, and stop displaying them
+    var treeNodes = yourJsTree.get_selected(true);
+    yourJsTree.delete_node(treeNodes);
+    treeNodes.forEach(function(node) {
+      var concept = yourOntById[node.id];
+      delete yourOntById[node.id];
+      delete yourOntByName[concept.name];
+      // TODO remove mappings
+    });
+    $('#your-details').hide();
   });
 
   $('#add-concept').on('click', function() {
@@ -589,8 +625,16 @@ $(function() {
   $('#add-trips-role, #add-your-role, #add-example, #rem-trips-role, #rem-your-role, #rem-example').on('click', function(evt) {
     var ul = evt.target.parentNode.parentNode;
     if (/^add-/.test(this.id)) {
-      addLiBeforeTemplate(ul);
+      var newLi = addLiBeforeTemplate(ul);
+      if ('add-trips-role' == this.id) {
+        newLi.on('rem', remTripsRole);
+      } else if ('add-your-role' == this.id) {
+	newLi.on('rem', remYourRole);
+      } else if ('add-example' == this.id) {
+	newLi.on('rem', remExample);
+      }
     } else {
+      // FIXME disallow removing non-extra TRIPS roles
       remLiBeforeTemplate(ul);
     }
     if (/-roles$/.test(ul.id)) {
@@ -601,41 +645,114 @@ $(function() {
     }
   });
 
-  /* your details oninput handlers */
+  /* trips roles onchange/rem handlers */
 
-  $('#your-concept-name').on('input', function(evt) {
-    var id = yourJsTree.get_selected();
+  window.inputTripsRoleName = function(evt) {
+    var id = tripsJsTree.get_selected()[0];
+    var concept = tripsOnt[id.replace(/^ont__/,'')];
+    var i = $(evt.currentTarget).parent().index();
+    concept.dynamic_sem_frame[i] =
+      { roles: 'ont:' + $(evt.currentTarget).val(), optional: true };
+  };
+
+  function remTripsRole(evt) {
+    var id = tripsJsTree.get_selected()[0];
+    var concept = tripsOnt[id.sub(/^ont__/,'')];
+    var i = $(this).parent().index();
+    if (concept.dynamic_sem_frame.length <= i) {
+      // do nothing
+    } else if (concept.dynamic_sem_frame.length == i+1) {
+      concept.dynamic_sem_frame.pop();
+    } else {
+      // FIXME shift role li IDs
+      concept.dynamic_sem_frame[i] = undefined;
+    }
+  }
+
+  /* your details oninput/onchange/rem handlers */
+
+  $('#your-concept-name').on('change', function(evt) {
+    var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
+    var newName = $(this).val();
+    if (newName in yourOntByName) {
+      alert('There is already a concept in your ontology named ' + JSON.stringify(newName) + ".\nYou must rename that concept first if you want to change the name of this concept from " + JSON.stringify(concept.name) + ' to ' + JSON.stringify(newName) + '.');
+      $(this).val(concept.name);
+      yourJsTree.set_text(id, ('' == concept.name ? '(new concept)' : concept.name));
+      return;
+    }
     delete yourOntByName[concept.name];
-    concept.name = $(this).val();
+    concept.name = newName;
     yourJsTree.set_text(id, concept.name);
     yourOntByName[concept.name] = concept;
   });
 
+  $('#your-concept-name').on('input', function(evt) {
+    var id = yourJsTree.get_selected()[0];
+    var concept = yourOntById[id];
+    var newName = $(this).val();
+    yourJsTree.set_text(id, newName);
+  });
+
   $('#your-concept-comment').on('input', function(evt) {
-    console.log('saving comment');
-    var id = yourJsTree.get_selected();
+    var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
     concept.comment = $(this).val();
   });
 
-  window.inputYourRoleName = function(evt) {
-    // TODO
+  window.inputYourRole = function(evt, key) {
+    var id = yourJsTree.get_selected()[0];
+    var concept = yourOntById[id];
+    var i = $(evt.currentTarget).parent().index();
+    var role = {};
+    if (concept.roles.length <= i) {
+      concept.roles[i] = role;
+    } else {
+      role = concept.roles[i];
+    }
+    role[key] = $(evt.currentTarget).val();
   };
 
-  window.inputYourRoleRestr = function(evt) {
-    // TODO
-  };
+  function remYourRole(evt) {
+    var id = yourJsTree.get_selected()[0];
+    var concept = yourOntById[id];
+    var i = $(this).parent().index();
+    if (concept.roles.length <= i) {
+      // do nothing
+    } else if (concept.roles.length == i+1) {
+      concept.roles.pop();
+    } else {
+      // FIXME shift role li IDs
+      concept.roles[i] = undefined;
+    }
+  }
 
   $('#your-words').on('input', function(evt) {
-    var id = yourJsTree.get_selected();
+    var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
     concept.words = $(this).val().trim().split(/\s*,\s*/);
   });
 
   window.inputYourExample = function(evt) {
-    // TODO
+    var id = yourJsTree.get_selected()[0];
+    var concept = yourOntById[id];
+    var i = $(evt.currentTarget).parent().index();
+    concept.examples[i] = $(evt.currentTarget).val();
   };
+
+  function remExample(evt) {
+    var id = yourJsTree.get_selected()[0];
+    var concept = yourOntById[id];
+    var i = $(this).parent().index();
+    if (concept.examples.length <= i) {
+      // do nothing
+    } else if (concept.examples.length == i+1) {
+      concept.examples.pop();
+    } else {
+      // FIXME shift example li IDs
+      concept.examples[i] = undefined;
+    }
+  }
 
   $('#trips-details').hide();
   $('#your-details').hide();

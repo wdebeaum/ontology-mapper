@@ -60,7 +60,7 @@
      <dt>roles<dd>
      <ul id="trips-roles" class="selectable">
       <!-- NB: don't add whitespace between li and select -->
-      <li class="template" id="trips-role-template" onclick="selectLi(event)"><select>
+      <li class="template added" id="trips-role-template" onclick="selectLi(event)"><select onchange="inputTripsRoleName(event)">
         <option value="" disabled selected>extra role
 	<!-- see LF Documentation Appendix A: Semantic Roles -->
 	<optgroup label="Core Argument Roles">
@@ -167,7 +167,7 @@
 	 <option>:position-reln
 	 <option>:source-reln
 	 <option>:stimulus
-	</select>
+	</select> (<i>optional</i>)
       <li class="controls"><button id="add-trips-role">+</button> <button id="rem-trips-role">-</button>
      </ul>
      <dt class="inline">words<dd id="trips-words">
@@ -193,7 +193,7 @@
      <textarea class="comment" id="your-concept-comment"></textarea>
      <dt>roles<dd>
      <ul id="your-roles" class="selectable">
-      <li class="template" id="your-role-template" onclick="selectLi(event)"><input type="text" oninput="inputYourRoleName(event)" placeholder="role name" required> <input type="text" oninput="inputYourRoleRestr(event)" placeholder="type restriction">
+      <li class="template" id="your-role-template" onclick="selectLi(event)"><input type="text" oninput="inputYourRole(event, 'name')" placeholder="role name" required> <input type="text" oninput="inputYourRole(event, 'restriction')" placeholder="type restriction">
       <li class="controls"><button id="add-your-role">+</button> <button id="rem-your-role">-</button>
      </ul>
      <dt class="inline"><label for="your-words">words</label><dd>

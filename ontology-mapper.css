@@ -147,3 +147,7 @@ ul.selectable li.selected {
 ul.selectable li.controls, li.controls {
   list-style-type: square;
 }
+
+li.inherited {
+  color: #666;
+}
