@@ -386,6 +386,17 @@ $(function() {
     }
   }
 
+  /* call applyInheritance if necessary */
+  function ensureInheritance(concept) {
+    if (!'dynamic_sem_frame' in concept) {
+      var sem_feats = {};
+      var sem_frame = [];
+      applyInheritance(concept, sem_feats, sem_frame);
+      concept.dynamic_sem_feats = sem_feats;
+      concept.dynamic_sem_frame = sem_frame;
+    }
+  }
+
   /* load words and examples if necessary, and then call done() */
   function ensureSenses(conceptName, done) {
     var concept = tripsOnt[conceptName];
@@ -466,16 +477,9 @@ $(function() {
       });
       // get rest of details from trips-ont-dsl.xml we already loaded
       $('#trips-concept-comment').text(concept.comment || '');
-      var sem_feats = {};
-      var sem_frame = [];
-      if ('dynamic_sem_frame' in concept) {
-	sem_feats = concept.dynamic_sem_feats;
-	sem_frame = concept.dynamic_sem_frame;
-      } else {
-        applyInheritance(concept, sem_feats, sem_frame);
-	concept.dynamic_sem_feats = sem_feats;
-	concept.dynamic_sem_frame = sem_frame;
-      }
+      ensureInheritance(concept);
+      var sem_feats = concept.dynamic_sem_feats;
+      var sem_frame = concept.dynamic_sem_frame;
       // TODO sem_feats?
       var template = clearUlUpToTemplate($('#trips-roles'));
       sem_frame.forEach(function(roleRestrMap, i) {
@@ -725,6 +729,7 @@ $(function() {
     var id = tripsJsTree.get_selected()[0];
     var concept = tripsOnt[id.replace(/^ont__/,'')];
     var i = $(evt.currentTarget).parent().index();
+    // TODO mark this roleRestrMap as an extra role, and add it with a selection box instead of a plain text li, in both '#trips-tree on changed.jstreee' and loadFromSavableRepresentation
     concept.dynamic_sem_frame[i] =
       { roles: 'ont:' + $(evt.currentTarget).val(), optional: true };
   };
@@ -849,7 +854,6 @@ $(function() {
 	return Object.assign({ mappings: mappings }, r);
       });
       ret[concept.name] = {
-	name: concept.name,
 	comment: concept.comment,
 	mappings: mappings,
 	roles: roles,
@@ -865,17 +869,158 @@ $(function() {
   }
 
   function loadFromSavableRepresentation(rep) {
-    // TODO
+    var warnings = [];
+    // make concepts and jsTree data nodes
+    var newOntByName = {};
+    var treeNodesByName = {};
+    for (var name in rep) {
+      var repConcept = rep[name];
+      try {
+	function warn(str) { warnings.push(str); }
+	function fail(str) { throw new Error(str); }
+	treeNodesByName[name] = {
+	  text: name,
+	  children: []
+	};
+	// sanity checks
+	if ('string' !== typeof repConcept.comment) {
+	  fail('expected comment to be a string');
+	}
+	if (!Array.isArray(repConcept.mappings)) {
+	  fail('expected mappings to be an array');
+	}
+	if (!Array.isArray(repConcept.roles)) {
+	  fail('expected roles to be an array');
+	}
+	if (!Array.isArray(repConcept.words)) {
+	  fail('expected words to be an array');
+	}
+	if (!Array.isArray(repConcept.examples)) {
+	  fail('expected examples to be an array');
+	}
+	var yourConcept = {
+	  name: name,
+	  comment: repConcept.comment,
+	  words: repConcept.words,
+	  examples: repConcept.examples
+	}
+	var conceptMappings = [];
+	repConcept.mappings.forEach(function(m) {
+	  if (('string' !== typeof m) || !/^ont::/.test(m)) {
+	    fail('expected concept mapping to be a string starting with ont::');
+	  }
+	  var tripsName = m.replace(/^ont::/,'');
+	  if (tripsName in tripsOnt) {
+	    conceptMappings.push(tripsOnt[tripsName]);
+	  } else {
+	    warn('your concept ' + name + ' has a mapping to a non-existent trips concept ' + tripsName + '; concept mapping deleted');
+	  }
+	});
+	var roles = [];
+	var roleMappings = [];
+	repConcept.roles.forEach(function(r) {
+	  if ('string' !== typeof r.name) {
+	    fail('expected role name to be a string');
+	  }
+	  if ('string' !== typeof r.restriction) {
+	    fail('expected role restriction to be a string');
+	  }
+	  if (!Array.isArray(r.mappings)) {
+	    fail('expected role mappings to be an array');
+	  }
+	  var yourRole = { name: r.name, restriction: r.restriction };
+	  roles.push(yourRole);
+	  r.mappings.forEach(function(m) {
+	    if (('string' !== typeof m.concept) || !/^ont::/.test(m.concept)) {
+	      fail('expected role mapping concept to be a string starting with ont::');
+	    }
+	    if (('string' !== typeof m.role) || !/^ont::/.test(m.role)) {
+	      fail('expected role mapping role to be a string starting with ont::');
+	    }
+	    var tripsName = m.replace(/^ont::/,'');
+	    if (tripsName in tripsOnt) {
+	      var tripsConcept = tripsOnt[tripsName];
+	      ensureInheritance(tripsConcept);
+	      var tripsRole =
+		tripsConcept.dynamic_sem_frame.find(function(roleRestrMap) {
+		  return m.role === roleRestrMap.roles.split(/\s+/)[0];
+		});
+	      if (tripsRole === undefined) {
+		if ($('#trips-role-template option').toArray().
+		    some(function(o) { return m.role === 'ont:' + o.text; })) {
+		  tripsRole = { roles: m.role, optional: true };
+		  tripsConcept.dynamic_sem_frame.push(tripsRole);
+		} else {
+		  warn('your concept ' + name + "'s role " + r.name + ' has a mapping to a non-existent trips role ' + m.role + '; role mapping deleted');
+		}
+	      }
+	      roleMappings.push({{
+		tripsConcept: tripsConcept,
+		tripsRole: tripsRole,
+		yourConcept: yourConcept,
+		yourRole: yourRole
+	      });
+	    } else {
+	      warn('your concept ' + name + "'s role " + r.name + ' has a mapping to a non-existent trips concept ' + tripsName + '; role mapping deleted');
+	    }
+	  });
+	});
+	yourConcept.conceptMappings = conceptMappings;
+	yourConcept.roles = roles;
+	yourConcept.roleMappings = roleMappings;
+	newOntByName[name] = yourConcept;
+      } catch (e) {
+	throw new Error(e.message + ' in ' + name + ': ' + JSON.stringify(repConcept));
+      }
+    }
+    // build the jsTree data
+    var newJsTreeData = [];
+    for (var name in rep) {
+      var siblings =
+        (('parent' in rep[name]) ?
+	  treeNodesByName[rep[name].parent] : newJsTreeData);
+      siblings.push(treeNodesByName[name])
+    }
+    yourJsTree.settings.core.data = newJsTreeData;
+    yourJsTree.refresh();
+    yourOntByName = newOntByName;
+    yourOntById = {};
+    yourJsTree.open_all(); // so that all nodes get elements and thus IDs
+    $('#your-tree li').each(function(i, li) {
+      var name = yourJsTree.get_text(li.id);
+      yourOntById[li.id] = yourOntByName[name];
+    });
+    yourJsTree.close_all();
+    $('#your-details').hide();
   }
 
   $('#save').on('click', function(evt) {
-    // TODO
-    console.log(JSON.stringify(savableRepresentation()));
+    // set the href of the file-output link to a data URI of JSON, and click it
+    $('#file-output').attr('href',
+      'data:application/json;charset=utf-8,' +
+      encodeURIComponent(JSON.stringify(savableRepresentation(), null, "\t"))
+    // not sure why [0] is necessary, but it doesn't work without it
+    )[0].click();
   });
 
   $('#load').on('click', function(evt) {
-    var rep = {}; // TODO
-    loadFromSavableRepresentation(rep);
+    $('#file-input')[0].click();
+  });
+
+  $('#file-input').on('change', function(evt) {
+    var file = this.files[0];
+    console.log('opening file' + file.name);
+    $('#file-output').attr('download', file.name); // save back to the same name
+    var reader = new FileReader();
+    reader.onload = function(evt) {
+      try {
+	var rep = JSON.parse(evt.target.result);
+	loadFromSavableRepresentation(rep);
+      } catch (e) {
+	alert('Error loading file ' + file.name + ': ' + e.message);
+      }
+    };
+    reader.readAsText();
   });
 
   $('#trips-details').hide();
