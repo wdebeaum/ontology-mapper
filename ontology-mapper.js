@@ -200,7 +200,52 @@ $(function() {
     var linesG = $('#' + conceptOrRole + '-lines');
     if (opts.openClose) {
       linesG.empty();
-      // TODO re-add lines
+      switch (conceptOrRole) {
+	case 'concept':
+	  for (var yourID in yourOntById) {
+	    var yourConcept = yourOntById[yourID];
+	    var yourHandle = $('#' + yourID + '__handle');
+	    yourConcept.conceptMappings.forEach(function(m) {
+	      var tripsID = 'ont__' + m.tripsConcept.name;
+	      var tripsHandle = $('#' + tripsID + '__handle');
+	      console.log(m);
+	      console.log({ tripsHandle: tripsHandle, yourHandle: yourHandle });
+	      if (yourHandle.length == 0 ||
+	          tripsHandle.length == 0) { // hidden
+		console.log('delete');
+		// TODO show lines for hidden concepts in a different color
+		delete m.line;
+	      } else {
+		console.log('add');
+		m.line = addLine(linesG, tripsID, yourID);
+	      }
+	    });
+	  }
+	  break;
+	case 'role':
+	  var tripsIDs = tripsJsTree.get_selected();
+	  var yourIDs = yourJsTree.get_selected();
+	  if (tripsIDs.length == 1 && yourIDs.length == 1) {
+	    var tripsID = tripsIDs[0];
+	    var yourID = yourIDs[0];
+	    var tripsConcept = tripsOnt[tripsID.replace(/^ont__/,'')];
+	    var yourConcept = yourOntById[yourID];
+	    yourConcept.roleMappings.forEach(function(m) {
+	      if (m.tripsConcept === tripsConcept) {
+		var tripsRoleIndex = tripsConcept.dynamic_sem_frame.indexOf(m.tripsRole);
+		var yourRoleIndex = yourConcept.roles.indexOf(m.yourRole);
+		var tripsRoleID = 'trips-role-' + tripsRoleIndex;
+		var yourRoleID = 'your-role-' + yourRoleIndex;
+		m.line = addLine(linesG, tripsRoleID, yourRoleID);
+	      } else {
+		delete m.line;
+	      }
+	    });
+	  }
+	  break;
+	default:
+	  throw new Error('WTF');
+      }
     } else if (opts.scroll) {
       linesG.children().each(function(i, line) {
 	scrollLine(side, ('concept' === conceptOrRole ? 'tree' : 'details'), $(line));
