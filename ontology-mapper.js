@@ -828,6 +828,56 @@ $(function() {
     }
   }
 
+  /* Return a savable representation of your ontology and mappings */
+  function savableRepresentation() {
+    var ret = { ontologySaveDate: new Date() }; // hope nobody makes a concept named that
+    for (var id in yourOntById) {
+      var concept = yourOntById[id];
+      var mappings = concept.conceptMappings.map(function(m) {
+	return 'ont::' + m.tripsConcept.name;
+      });
+      var roles = concept.roles.map(function(r) {
+	var mappings = [];
+	concept.roleMappings.forEach(function(m) {
+	  if (m.yourRole === r) {
+	    mappings.push({
+	      concept: 'ont::' + m.tripsConcept.name,
+	      role: m.tripsRole.roles.split(/\s+/)[0]
+	    });
+	  }
+	});
+	return Object.assign({ mappings: mappings }, r);
+      });
+      ret[concept.name] = {
+	name: concept.name,
+	comment: concept.comment,
+	mappings: mappings,
+	roles: roles,
+	words: concept.words,
+	examples: concept.examples
+      };
+      var parentID = yourJsTree.get_parent(id);
+      if (parentID != '#') { // not root
+	ret[concept.name].parent = yourOntById[parentID].name;
+      }
+    }
+    return ret;
+  }
+
+  function loadFromSavableRepresentation(rep) {
+    // TODO
+  }
+
+  $('#save').on('click', function(evt) {
+    // TODO
+    console.log(JSON.stringify(savableRepresentation()));
+  });
+
+  $('#load').on('click', function(evt) {
+    var rep = {}; // TODO
+    loadFromSavableRepresentation(rep);
+  });
+
   $('#trips-details').hide();
   $('#your-details').hide();
 });
