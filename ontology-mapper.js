@@ -388,7 +388,7 @@ $(function() {
 
   /* call applyInheritance if necessary */
   function ensureInheritance(concept) {
-    if (!'dynamic_sem_frame' in concept) {
+    if (!('dynamic_sem_frame' in concept)) {
       var sem_feats = {};
       var sem_frame = [];
       applyInheritance(concept, sem_feats, sem_frame);
@@ -783,7 +783,7 @@ $(function() {
     var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
     var i = $(evt.currentTarget).parent().index();
-    var role = {};
+    var role = { name: '', restriction: '' };
     if (concept.roles.length <= i) {
       concept.roles[i] = role;
     } else {
@@ -872,13 +872,17 @@ $(function() {
     var warnings = [];
     // make concepts and jsTree data nodes
     var newOntByName = {};
+    var newOntById = {};
     var treeNodesByName = {};
+    var treeNodeIndex = 1;
     for (var name in rep) {
+      if (name === 'ontologySaveDate') { continue; }
       var repConcept = rep[name];
       try {
 	function warn(str) { warnings.push(str); }
 	function fail(str) { throw new Error(str); }
 	treeNodesByName[name] = {
+	  id: 'j1_' + (treeNodeIndex++),
 	  text: name,
 	  children: []
 	};
@@ -899,6 +903,7 @@ $(function() {
 	  fail('expected examples to be an array');
 	}
 	var yourConcept = {
+	  id: treeNodesByName[name].id,
 	  name: name,
 	  comment: repConcept.comment,
 	  words: repConcept.words,
@@ -911,7 +916,10 @@ $(function() {
 	  }
 	  var tripsName = m.replace(/^ont::/,'');
 	  if (tripsName in tripsOnt) {
-	    conceptMappings.push(tripsOnt[tripsName]);
+	    conceptMappings.push({
+	      yourConcept: repConcept,
+	      tripsConcept: tripsOnt[tripsName]
+	    });
 	  } else {
 	    warn('your concept ' + name + ' has a mapping to a non-existent trips concept ' + tripsName + '; concept mapping deleted');
 	  }
@@ -937,7 +945,7 @@ $(function() {
 	    if (('string' !== typeof m.role) || !/^ont::/.test(m.role)) {
 	      fail('expected role mapping role to be a string starting with ont::');
 	    }
-	    var tripsName = m.replace(/^ont::/,'');
+	    var tripsName = m.concept.replace(/^ont::/,'');
 	    if (tripsName in tripsOnt) {
 	      var tripsConcept = tripsOnt[tripsName];
 	      ensureInheritance(tripsConcept);
@@ -954,7 +962,7 @@ $(function() {
 		  warn('your concept ' + name + "'s role " + r.name + ' has a mapping to a non-existent trips role ' + m.role + '; role mapping deleted');
 		}
 	      }
-	      roleMappings.push({{
+	      roleMappings.push({
 		tripsConcept: tripsConcept,
 		tripsRole: tripsRole,
 		yourConcept: yourConcept,
@@ -969,6 +977,7 @@ $(function() {
 	yourConcept.roles = roles;
 	yourConcept.roleMappings = roleMappings;
 	newOntByName[name] = yourConcept;
+	newOntById[yourConcept.id] = yourConcept;
       } catch (e) {
 	throw new Error(e.message + ' in ' + name + ': ' + JSON.stringify(repConcept));
       }
@@ -976,22 +985,16 @@ $(function() {
     // build the jsTree data
     var newJsTreeData = [];
     for (var name in rep) {
+      if (name === 'ontologySaveDate') { continue; }
       var siblings =
         (('parent' in rep[name]) ?
-	  treeNodesByName[rep[name].parent] : newJsTreeData);
+	  treeNodesByName[rep[name].parent].children : newJsTreeData);
       siblings.push(treeNodesByName[name])
     }
     yourJsTree.settings.core.data = newJsTreeData;
     yourJsTree.refresh();
     yourOntByName = newOntByName;
-    yourOntById = {};
-    yourJsTree.open_all(); // so that all nodes get elements and thus IDs
-    $('#your-tree li').each(function(i, li) {
-      var name = yourJsTree.get_text(li.id);
-      yourOntById[li.id] = yourOntByName[name];
-    });
-    yourJsTree.close_all();
-    $('#your-details').hide();
+    yourOntById = newOntById;
   }
 
   $('#save').on('click', function(evt) {
@@ -1020,7 +1023,7 @@ $(function() {
 	alert('Error loading file ' + file.name + ': ' + e.message);
       }
     };
-    reader.readAsText();
+    reader.readAsText(file);
   });
 
   $('#trips-details').hide();
