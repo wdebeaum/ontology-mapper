@@ -28,7 +28,7 @@ $(function() {
   function xslTransformAndEval(proc, doc) {
     return eval('(' + (
       window.XSLTProcessor ?
-	proc.transformToDocument(doc).documentElement.innerHTML
+	$(proc.transformToDocument(doc).documentElement).text()
       : // IE
 	doc.transformNode(proc)
     ) + ')');
@@ -207,15 +207,11 @@ $(function() {
 	    yourConcept.conceptMappings.forEach(function(m) {
 	      var tripsID = 'ont__' + m.tripsConcept.name;
 	      var tripsHandle = $('#' + tripsID + '__handle');
-	      console.log(m);
-	      console.log({ tripsHandle: tripsHandle, yourHandle: yourHandle });
 	      if (yourHandle.length == 0 ||
 	          tripsHandle.length == 0) { // hidden
-		console.log('delete');
 		// TODO show lines for hidden concepts in a different color
 		delete m.line;
 	      } else {
-		console.log('add');
 		m.line = addLine(linesG, tripsID, yourID);
 	      }
 	    });
@@ -1011,7 +1007,7 @@ $(function() {
 
   $('#file-input').on('change', function(evt) {
     var file = this.files[0];
-    console.log('opening file' + file.name);
+    console.log('opening file ' + file.name);
     $('#file-output').attr('download', file.name); // save back to the same name
     var reader = new FileReader();
     reader.onload = function(evt) {

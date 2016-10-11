@@ -12,7 +12,8 @@ Note: this is not meant to be a general transformation, it only works for these
 files in this situation.
   -->
 
-<import href="str.replace.template.xsl" />
+<!-- doesn't work on Safari :( -->
+<!-- import href="str.replace.template.xsl" / -->
 
 <output method="text" encoding="UTF-8" />
 
@@ -23,7 +24,7 @@ files in this situation.
 <template name="escape">
  <param name="str" />
  <!-- TODO? control chars \b \f \n \r \t -->
- <call-template name="str:replace">
+ <!-- call-template name="str:replace">
   <with-param name="search" select="'&quot;'" />
   <with-param name="replace" select="'\&quot;'" />
   <with-param name="string">
@@ -33,7 +34,9 @@ files in this situation.
     <with-param name="string" select="$str" />
    </call-template>
   </with-param>
- </call-template>
+ </call-template -->
+ <!-- we don't actually escape anything, so maybe this isn't necessary -->
+ <value-of select="$str" />
 </template>
 
 <template match="relation[@label='inherit']">
@@ -87,7 +90,7 @@ files in this situation.
 </template>
 
 <template match="relation[@label='overlap']">
- <text>    overlap: [</text>
+ <!-- text>    overlap: [</text>
  <call-template name="str:replace">
   <with-param name="string">
    <call-template name="str:replace">
@@ -106,6 +109,11 @@ files in this situation.
   <with-param name="replace" select="','" />
  </call-template>
  <text>],
+</text -->
+ <!-- HACK: not really JSON, but because we're using eval we can cheat and call JS functions to do our dirty work -->
+ <text>    overlap: "</text>
+ <value-of select="normalize-space(.)" />
+ <text>".replace(/(wn::)?\|/g, '').split(/\s+/),
 </text>
 </template>
 
@@ -115,11 +123,14 @@ files in this situation.
  <text>': '</text>
  <choose>
   <when test="or">
-   <call-template name="str:replace">
+   <!-- call-template name="str:replace">
     <with-param name="string" select="normalize-space(.)" />
     <with-param name="search" select="' '" />
     <with-param name="replace" select="' or '" />
-   </call-template>
+   </call-template -->
+   <!-- HACK: see above -->
+   <value-of select="normalize-space(.)" />
+   <text>'.replace(/\s+/, ' or ') + '</text>
   </when>
   <otherwise>
    <value-of select="." />

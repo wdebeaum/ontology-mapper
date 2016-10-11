@@ -10,8 +10,11 @@ DOWNLOADS = \
 	style.min.css \
 	32px.png \
 	40px.png \
-	throbber.gif \
-	str.replace.template.xsl
+	throbber.gif
+
+# this doesn't work on Safari :(
+#	str.replace.template.xsl
+
 SRCS = \
 	$(DOWNLOADS) \
 	ontology-mapper.html \
@@ -38,8 +41,8 @@ jstree.min.js:
 style.min.css 32px.png 40px.png throbber.gif:
 	$(call download,https://cdnjs.cloudflare.com/ajax/libs/jstree/$(JSTREE_VERSION)/themes/default/$@)
 
-str.replace.template.xsl:
-	$(call download,http://exslt.org/str/functions/replace/str.replace.template.xsl)
+#str.replace.template.xsl:
+#	$(call download,http://exslt.org/str/functions/replace/str.replace.template.xsl)
 
 clean:
 	rm -f $(DOWNLOADS)
