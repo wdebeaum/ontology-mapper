@@ -24,10 +24,14 @@ SRCS = \
 
 all: download
 
-install: $(SRCS)
+install: $(SRCS) install-doc
 	mkdir -p $(INSTALL_DIR)
 	cp $(SRCS) $(INSTALL_DIR)/
 	sed -e "s@var DSL_DATA_PATH = 'dsl/'@var DSL_DATA_PATH = '$(DSL_DATA_PATH)'@" <ontology-mapper.js >$(INSTALL_DIR)/ontology-mapper.js
+
+install-doc: doc/README.html
+	mkdir -p $(INSTALL_DIR)/doc
+	cp doc/README.html $(INSTALL_DIR)/doc
 
 download: $(DOWNLOADS)
 

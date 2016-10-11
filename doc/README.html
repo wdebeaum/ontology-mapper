@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Ontology Builder/Mapper README</title>
+<style type="text/css">
+
+/* TODO factor some of this out so that the README and the real site can share it */
+
+table, tr, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+  padding: 0;
+}
+
+th, td {
+  vertical-align: top;
+  text-align: left;
+}
+
+th {
+  background-color: #ccc;
+}
+
+button {
+  border-style: outset;
+  border-width: 2px;
+  border-color: #ddd;
+  background-color: #ddd;
+}
+
+th.meta {
+  padding: 1em;
+  color: white;
+  background-color: black;
+  border: 5px solid white;
+}
+
+th.meta.top {
+  text-align: center;
+  border-bottom: 1px solid black;
+}
+
+th.meta.left {
+  text-align: right;
+  vertical-align: middle;
+  border-right: 1px solid black;
+}
+
+th.meta.top.left {
+  background-color: white;
+}
+
+td.pane {
+  text-align: center;
+  vertical-align: middle;
+  height: 8em;
+}
+
+dl {
+  border: 1px solid black;
+  width: 50%;
+  margin: 0;
+}
+
+dt {
+  font-weight: bold;
+}
+
+dt.inline {
+  display: inline;
+}
+
+dt:after {
+  content: ': ';
+}
+
+dd {
+  display: inline;
+  margin-left: 0;
+}
+
+.comment {
+  white-space: normal;
+  width: calc(100% - 1em - 4px);
+  margin-left: 1em;
+}
+
+ul.selectable {
+  list-style-position: inside;
+  padding-left: 1.5em;
+}
+
+ul.selectable li {
+  list-style-type: circle;
+}
+
+ul.selectable li.selected {
+  list-style-type: disc;
+}
+
+.selected {
+  background: #beebff;
+  border-radius: 2px;
+  box-shadow: inset 0 0 1px #999;
+}
+
+ul.selectable li.controls, li.controls {
+  list-style-type: square;
+}
+
+code, code pre {
+  background-color: LightGray;
+}
+
+var {
+  background-color: SkyBlue;
+}
+
+</style>
+</head>
+<body>
+<h1>Ontology Builder/Mapper README</h1>
+
+<h2>Introduction</h2>
+<p>The Ontology Builder/Mapper is a tool for building an ontology and/or creating mappings between your ontology and the TRIPS ontology.</p>
+
+<h3>Features</h3>
+<ul>
+ <li>Add/remove concepts in your ontology.
+ <li>Rearrange concepts in your ontology into a tree by dragging them.
+ <li>Edit your concept details:
+  <ul>
+   <li>name
+   <li>comment
+   <li>roles/restrictions
+   <li>words
+   <li>examples
+  </ul>
+ <li>Add/remove mappings between TRIPS concepts and your concepts.
+ <li>Add/remove mappings between the roles of a TRIPS concept and the roles of your concept when the concepts are mapped.
+ <li>Add/remove extra roles in TRIPS concepts.
+ <li>Search for concepts by name in TRIPS ontology or your ontology.
+ <li>Load/save your ontology and mappings as JSON.
+</ul>
+
+<h4>Planned Features</h4>
+<ul>
+ <li>Display mappings between concepts that aren't visible because that part of the tree is collapsed as if they were mappings between their nearest visible ancestors, except in a different color.
+ <li>Inherit role mapping defaults, and display inherited mappings in a different color.
+ <li>Drag between the concept handles in the map panes to create mappings.
+ <li>When a concept in one ontology is selected, and it has words associated with it, each concept in the other ontology should display how many of those words (if any) are associated with it or its descendants, next to its node in the tree view.
+ <li>Display mappings between TRIPS concepts and WordNet senses in the TRIPS concept details, and use them as extra words for the above point.
+ <li>Extend mapping lines into tree views, up to the name of the concept.
+ <li>Export to/import from other formats, e.g. DSL, OWL.
+</ul>
+
+<h3>Known Bugs</h3>
+<ul>
+ <li>Role "-" buttons remove the last role instead of the selected one.
+ <li>Extra TRIPS roles look like normal TRIPS roles when the TRIPS concept details pane is refreshed, rather than using the selection box they start out with. If you want to change an extra role, you must remove it and re-add it (and any mappings it had).
+ <li>It's possible to "remove" non-extra TRIPS roles. The removal will not be saved.
+ <li>There are gaps on the right and bottom sides of the map panes.
+ <li>The map panes aren't updated when the window is resized horizontally.
+ <li>The map panes aren't updated when a file is loaded.
+ <li>Tree nodes remain selected even after they are hidden because an ancestor was collapsed.
+</ul>
+
+<h2>Usage</h2>
+
+<p>The interface is divided into a grid of three horizontal sections by two vertical sections, like this:</p>
+<table>
+<tr><th rowspan="2" class="meta top left"></th><th colspan="2" class="meta top">TRIPS ontology</th><th class="meta top">mappings</th><th colspan="2" class="meta top">your ontology</th></tr>
+<tr><th colspan="3">Ontology Builder/Mapper (<a href="#">help</a>)</th><th><button>load</button> <button>save</button></th><th>concept: <button>+</button> <button>-</button></th></tr>
+<tr><th rowspan="2" class="meta left">trees</th><th>TRIPS ontology</th><td>search for concept</td><th>map: <button>+</button> <button>-</button></th><th>Your ontology</th><td>search for concept</td></tr>
+<tr><td colspan="2" class="pane">[TRIPS tree view]</td><td class="pane">[concept mappings]</td><td colspan="2" class="pane">[your tree view]</td></tr>
+<tr><th rowspan="2" class="meta left">details/roles</th><th colspan="2">TRIPS concept details</th><th>map: <button>+</button> <button>-</button></th><th colspan="2">Your concept details</th></tr>
+<tr><td colspan="2" class="pane">[TRIPS concept detail view]</td><td class="pane">[role mappings]</td><td colspan="2" class="pane">[your concept detail view]</td></tr>
+</table>
+
+<p>The <button>+</button> and <button>-</button> buttons add and remove things. The pair labeled "concept" at the top right add and remove concepts in your ontology. The pairs labeled "map" in the middle add and remove mappings between the TRIPS ontology and your ontology. The top middle pair (in the trees row) add and remove mappings between the selected <em>concepts</em>, and the bottom middle pair (in the details/roles row) add and remove mappings between the selected <em>roles</em>. Role mappings are specific to the concepts the roles are in (but see Planned Features). Mappings appear in the middle column as lines drawn between the mapped concepts/roles.</p>
+
+<p>Each side of the trees section has a search box at the top right. Enter the name of a concept to search for it in the ontology on that side. If found, its ancestors will be expanded, it will be selected, and it will scroll into view. If not, an alert will appear.</p>
+
+<p>Create some concepts by clicking the concept <button>+</button> button and entering a name for each one in your concept detail view. Then you can drag them around the tree view in order to form a hierarchy. You can select multiple concepts at once by holding the shift or control keys, and then you can drag the whole selection as a unit. You can expand or collapse nodes in the tree views either by clicking on the arrow to the left of the node, or by double-clicking the node itself. It is also possible to navigate the tree views using the keyboard: up/down arrows move the cursor, left/right arrows collapse/expand the node under the cursor, or move up/down the hierarchy, and enter selects the node under the cursor.</p>
+
+<p>Selected things are <span class="selected">highlighted in blue</span>. When exactly one concept is selected in the tree view, its details are displayed in the corresponding concept detail view:</p>
+<dl>
+ <dt class="inline">name<dd><var>the name of the concept</var>
+ <dt>comment<dd><var class="comment">comments about the concept</var>
+ <dt>roles<dd><ul class="selectable">
+  <li>role/restriction 1
+  <li class="selected">role/restriction 2
+  <li>role/restriction 3
+  <li>...
+  <li class="controls"><button>+</button> <button>-</button>
+ </ul>
+ <dt class="inline">words<dd><var>words associated with the concept</var>
+ <dt>examples<dd><ul>
+  <li><var>example sentence using the words</var>
+  <li>...
+  <li class="controls"><button>+</button> <button>-</button>
+ </ul>
+</dl>
+
+<p>All of your concept details are editable. Required fields are marked according to your browser's convention. Extra roles are the only things that are editable in the TRIPS concept details. Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. Extra roles that aren't mapped aren't saved.</p>
+
+<p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). Click the <button>load</button> button to the left of it to load such a file back into the page.</p>
+
+<h2>JSON Save Format</h2>
+<p>The following is the structure of the save file generated when you click the <button>save</button>. Variables are <var>highlighted in blue</var>. All fields are required except <code>"parent"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept.</p>
+
+<code><pre>
+{
+	"ontologySaveDate": "<var>date and time that the <button>save</button> button was clicked</var>",
+	"<var>your concept name</var>": {
+		"comment": "<var>comment</var>",
+		"mappings": [
+			"ont::<var>trips concept name</var>",
+			"ont::<var>trips concept name</var>"
+		],
+		"roles": [
+			{
+				"mappings": [
+					{
+						"concept": "ont::<var>trips concept name</var>",
+						"role:" "ont::<var>trips role name</var>"
+					},
+					<var>more mappings...</var>
+				],
+				"name": "<var>your role name</var>",
+				"restriction": "<var>your role restriction</var>"
+			},
+			<var>more roles...</var>
+		],
+		"words": [
+			"<var>word associated with your concept</var>",
+			<var>more words...</var>
+		],
+		"examples": [
+			"<var>example sentence using those words</var>",
+			<var>more examples...</var>
+		],
+		"parent": "<var>name of the parent of your concept in your tree</var>"
+	},
+	<var>more of your concepts...</var>
+}
+</pre></code>
+
+</body>
+</html>
