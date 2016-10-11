@@ -1,8 +1,8 @@
+INSTALL_DIR=/u/www/research/trips/lexicon/ontology-mapper
+DSL_DATA_PATH=../dsl/
 JQUERY_VERSION=3.1.1
 JSTREE_VERSION=3.3.2
 download=curl -O -L $(1)
-
-all: download
 
 DOWNLOADS = \
 	jquery.min.js \
@@ -12,6 +12,19 @@ DOWNLOADS = \
 	40px.png \
 	throbber.gif \
 	str.replace.template.xsl
+SRCS = \
+	$(DOWNLOADS) \
+	ontology-mapper.html \
+	ontology-mapper.css \
+	ontology-mapper.js \
+	dsl-to-json.xsl
+
+all: download
+
+install: $(SRCS)
+	mkdir -p $(INSTALL_DIR)
+	cp $(SRCS) $(INSTALL_DIR)/
+	sed -e "s@var DSL_DATA_PATH = 'dsl/'@var DSL_DATA_PATH = '$(DSL_DATA_PATH)'@" <ontology-mapper.js >$(INSTALL_DIR)/ontology-mapper.js
 
 download: $(DOWNLOADS)
 

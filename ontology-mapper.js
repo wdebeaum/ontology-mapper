@@ -1,5 +1,4 @@
 $(function() {
-  //var DSL_DATA_PATH = '../dsl/';
   var DSL_DATA_PATH = 'dsl/';
 
   function loadXSL(url, done) {
