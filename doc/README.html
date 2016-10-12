@@ -147,12 +147,13 @@ var {
   <ul>
    <li>name
    <li>comment
-   <li>roles/restrictions
+   <li>roles
    <li>words
    <li>examples
   </ul>
  <li>Add/remove mappings between TRIPS concepts and your concepts.
- <li>Add/remove mappings between the roles of a TRIPS concept and the roles of your concept when the concepts are mapped.
+ <li>Add/remove mappings between the roles of a TRIPS concept and the roles of your concept, when the concepts are mapped.
+ <li>Add/remove mappings between specific role value types of the roles of a TRIPS concept, and the roles of your concept, when the concepts are mapped.
  <li>Add/remove extra roles in TRIPS concepts.
  <li>Search for concepts by name in TRIPS ontology or your ontology.
  <li>Load/save your ontology and mappings as JSON.
@@ -167,18 +168,20 @@ var {
  <li>Display mappings between TRIPS concepts and WordNet senses in the TRIPS concept details, and use them as extra words for the above point.
  <li>Extend mapping lines into tree views, up to the name of the concept.
  <li>Export to/import from other formats, e.g. DSL, OWL.
+ <li>Autocomplete concept search boxes.
+ <li>Autocomplete role value type boxes.
 </ul>
 
 <h3>Known Bugs</h3>
 <ul>
  <li>Role "-" buttons remove the last role instead of the selected one.
- <li>Extra TRIPS roles look like normal TRIPS roles when the TRIPS concept details pane is refreshed, rather than using the selection box they start out with. If you want to change an extra role, you must remove it and re-add it (and any mappings it had).
  <li>It's possible to "remove" non-extra TRIPS roles. The removal will not be saved.
  <li>Your concept details pane doesn't display inherited roles, and it's thus not possible to map them.
  <li>There are gaps on the right and bottom sides of the map panes.
  <li>The map panes aren't updated when the window is resized horizontally.
  <li>The map panes aren't updated when a file is loaded.
  <li>Tree nodes remain selected even after they are hidden because an ancestor was collapsed.
+ <li>It's possible to map roles when the corresponding concepts aren't mapped yet (maybe that should cause the concepts to be mapped).
 </ul>
 
 <h2>Usage</h2>
@@ -218,7 +221,7 @@ var {
  </ul>
 </dl>
 
-<p>All of your concept details are editable. Fields that are required but not yet filled are <span class="invalid">highlighted in pink</span>. Extra roles are the only things that are editable in the TRIPS concept details. Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. Extra roles that aren't mapped aren't saved.</p>
+<p>All of your concept details are editable. Fields that are required but not yet filled are <span class="invalid">highlighted in pink</span>. Extra roles and role value types are the only things that are editable in the TRIPS concept details. Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. Extra roles that aren't mapped aren't saved. Role value types may be added to each TRIPS role for the purpose of mapping them to your roles. The intended meaning of such mappings is that the TRIPS role will only be mapped to your role if its value is a term of the given type. The type must be a TRIPS concept name.</p>
 
 <p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). (Safari and IE users: this might just open the file in the browser instead, so you will then have to use your browser's "save as" function, and save only the page source and not a web archive/complete webpage. IE users: upgrade to Edge. Safari users: complain to Apple and tell them to implement the <code>download</code> attribute.) Click the <button>load</button> button to the left of the <button>save</button> button to load such a file back into the page.</p>
 
@@ -239,12 +242,12 @@ var {
 				"mappings": [
 					{
 						"concept": "ont::<var>trips concept name</var>",
-						"role:" "ont::<var>trips role name</var>"
+						"role:" "ont::<var>trips role name</var>",
+						"valueType": "ont::<var>trips concept name</var>"
 					},
 					<var>more mappings...</var>
 				],
-				"name": "<var>your role name</var>",
-				"restriction": "<var>your role restriction</var>"
+				"name": "<var>your role name</var>"
 			},
 			<var>more roles...</var>
 		],

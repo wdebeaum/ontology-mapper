@@ -169,7 +169,18 @@
 	 <option>:position-reln
 	 <option>:source-reln
 	 <option>:stimulus
-	</select> (<i>optional</i>)
+       </select>
+       (<i>optional</i>)
+       <ul>
+        <li id="type-template-of-trips-role-template" class="template" onclick="selectLi(event); event.stopPropagation();"><input type="text" onchange="changeTripsRoleType(event)" placeholder="TRIPS concept" required>
+	<li class="controls">role value type to map from: <button onclick="addTripsRoleType(event)">+</button> <button onclick="remTripsRoleType(event)">-</button>
+       </ul>
+      <li id="trips-role-template" class="template original" onclick="selectLi(event)">
+       <!-- role desc goes here -->
+       <ul>
+        <li id="type-template-of-trips-role-template" class="template" onclick="selectLi(event); event.stopPropagation();"><input type="text" onchange="changeTripsRoleType(event)" placeholder="TRIPS concept" required>
+	<li class="controls">role value type to map from: <button onclick="addTripsRoleType(event)">+</button> <button onclick="remTripsRoleType(event)">-</button>
+       </ul>
       <li class="controls"><button id="add-trips-role">+</button> <button id="rem-trips-role">-</button>
      </ul>
      <dt class="inline">words<dd id="trips-words">
@@ -195,7 +206,7 @@
      <textarea class="comment" id="your-concept-comment"></textarea>
      <dt>roles<dd>
      <ul id="your-roles" class="selectable">
-      <li class="template" id="your-role-template" onclick="selectLi(event)"><input type="text" oninput="inputYourRole(event, 'name')" placeholder="role name" required> <input type="text" oninput="inputYourRole(event, 'restriction')" placeholder="type restriction">
+      <li class="template" id="your-role-template" onclick="selectLi(event)"><input type="text" oninput="inputYourRole(event, 'name')" placeholder="role name" required>
       <li class="controls"><button id="add-your-role">+</button> <button id="rem-your-role">-</button>
      </ul>
      <dt class="inline"><label for="your-words">words</label><dd>
