@@ -105,8 +105,22 @@ ul.selectable li.selected {
   box-shadow: inset 0 0 1px #999;
 }
 
+.cursor {
+  background: #e7f4f9;
+  border-radius: 2px;
+  box-shadow: inset 0 0 1px #ccc;
+}
+
 ul.selectable li.controls, li.controls {
   list-style-type: square;
+}
+
+.invalid {
+  background-color: pink;
+}
+
+li.inherited {
+  color: #666;
 }
 
 code, code pre {
@@ -114,7 +128,7 @@ code, code pre {
 }
 
 var {
-  background-color: SkyBlue;
+  background-color: LightGreen;
 }
 
 </style>
@@ -146,7 +160,7 @@ var {
 
 <h4>Planned Features</h4>
 <ul>
- <li>Display mappings between concepts that aren't visible because that part of the tree is collapsed as if they were mappings between their nearest visible ancestors, except in a different color.
+ <li>Display mappings between concepts that aren't visible because that part of the tree is collapsed, as if they were mappings between their nearest visible ancestors, except in a different color.
  <li>Inherit role mapping defaults, and display inherited mappings in a different color.
  <li>Drag between the concept handles in the map panes to create mappings.
  <li>When a concept in one ontology is selected, and it has words associated with it, each concept in the other ontology should display how many of those words (if any) are associated with it or its descendants, next to its node in the tree view.
@@ -160,6 +174,7 @@ var {
  <li>Role "-" buttons remove the last role instead of the selected one.
  <li>Extra TRIPS roles look like normal TRIPS roles when the TRIPS concept details pane is refreshed, rather than using the selection box they start out with. If you want to change an extra role, you must remove it and re-add it (and any mappings it had).
  <li>It's possible to "remove" non-extra TRIPS roles. The removal will not be saved.
+ <li>Your concept details pane doesn't display inherited roles, and it's thus not possible to map them.
  <li>There are gaps on the right and bottom sides of the map panes.
  <li>The map panes aren't updated when the window is resized horizontally.
  <li>The map panes aren't updated when a file is loaded.
@@ -168,7 +183,7 @@ var {
 
 <h2>Usage</h2>
 
-<p>The interface is divided into a grid of three horizontal sections by two vertical sections, like this:</p>
+<p>The interface is divided into a grid of three sections horizontally by two sections vertically, like this:</p>
 <table>
 <tr><th rowspan="2" class="meta top left"></th><th colspan="2" class="meta top">TRIPS ontology</th><th class="meta top">mappings</th><th colspan="2" class="meta top">your ontology</th></tr>
 <tr><th colspan="3">Ontology Builder/Mapper (<a href="#">help</a>)</th><th><button>load</button> <button>save</button></th><th>concept: <button>+</button> <button>-</button></th></tr>
@@ -178,20 +193,20 @@ var {
 <tr><td colspan="2" class="pane">[TRIPS concept detail view]</td><td class="pane">[role mappings]</td><td colspan="2" class="pane">[your concept detail view]</td></tr>
 </table>
 
-<p>The <button>+</button> and <button>-</button> buttons add and remove things. The pair labeled "concept" at the top right add and remove concepts in your ontology. The pairs labeled "map" in the middle add and remove mappings between the TRIPS ontology and your ontology. The top middle pair (in the trees row) add and remove mappings between the selected <em>concepts</em>, and the bottom middle pair (in the details/roles row) add and remove mappings between the selected <em>roles</em>. Role mappings are specific to the concepts the roles are in (but see Planned Features). Mappings appear in the middle column as lines drawn between the mapped concepts/roles.</p>
+<p>The <button>+</button> and <button>-</button> buttons add and remove things. The pair of buttons labeled "concept" at the top right add and remove concepts in your ontology. The pairs labeled "map" in the middle add and remove mappings between the TRIPS ontology and your ontology. The top middle pair (in the trees row) add and remove mappings between the selected <em>concepts</em>, and the bottom middle pair (in the details/roles row) add and remove mappings between the selected <em>roles</em>. Role mappings are specific to the concepts the roles are in (but see Planned Features). Mappings appear in the middle column as lines drawn between the mapped concepts/roles.</p>
 
 <p>Each side of the trees section has a search box at the top right. Enter the name of a concept to search for it in the ontology on that side. If found, its ancestors will be expanded, it will be selected, and it will scroll into view. If not, an alert will appear.</p>
 
-<p>Create some concepts by clicking the concept <button>+</button> button and entering a name for each one in your concept detail view. Then you can drag them around the tree view in order to form a hierarchy. You can select multiple concepts at once by holding the shift or control keys, and then you can drag the whole selection as a unit. You can expand or collapse nodes in the tree views either by clicking on the arrow to the left of the node, or by double-clicking the node itself. It is also possible to navigate the tree views using the keyboard: up/down arrows move the cursor, left/right arrows collapse/expand the node under the cursor, or move up/down the hierarchy, and enter selects the node under the cursor.</p>
+<p>Create some concepts by clicking the concept <button>+</button> button and entering a name for each one in your concept detail view. Then you can drag them around the tree view in order to form a hierarchy. You can select multiple concepts at once by holding the shift or control keys, and then you can drag the whole selection as a unit. You can expand or collapse concept nodes in the tree views either by clicking on the arrow to the left of the concept, or by double-clicking the concept itself. It is also possible to navigate the tree views using the keyboard: up/down arrows move the cursor, left/right arrows collapse/expand the concept under the cursor, or move up/down the hierarchy, and enter selects the concept under the cursor.</p>
 
-<p>Selected things are <span class="selected">highlighted in blue</span>. When exactly one concept is selected in the tree view, its details are displayed in the corresponding concept detail view:</p>
+<p>Selected things are <span class="selected">highlighted in blue</span> (the cursor and the selection are separate, though they look similar; the cursor is <span class="cursor">lighter blue</span>). When exactly one concept is selected in the tree view, its details are displayed in the corresponding concept detail view:</p>
 <dl>
  <dt class="inline">name<dd><var>the name of the concept</var>
  <dt>comment<dd><var class="comment">comments about the concept</var>
  <dt>roles<dd><ul class="selectable">
   <li>role/restriction 1
   <li class="selected">role/restriction 2
-  <li>role/restriction 3
+  <li class="inherited">inherited role/restriction 3
   <li>...
   <li class="controls"><button>+</button> <button>-</button>
  </ul>
@@ -203,12 +218,12 @@ var {
  </ul>
 </dl>
 
-<p>All of your concept details are editable. Required fields are marked according to your browser's convention. Extra roles are the only things that are editable in the TRIPS concept details. Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. Extra roles that aren't mapped aren't saved.</p>
+<p>All of your concept details are editable. Fields that are required but not yet filled are <span class="invalid">highlighted in pink</span>. Extra roles are the only things that are editable in the TRIPS concept details. Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. Extra roles that aren't mapped aren't saved.</p>
 
 <p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). Click the <button>load</button> button to the left of it to load such a file back into the page.</p>
 
 <h2>JSON Save Format</h2>
-<p>The following is the structure of the save file generated when you click the <button>save</button>. Variables are <var>highlighted in blue</var>. All fields are required except <code>"parent"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept.</p>
+<p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept.</p>
 
 <code><pre>
 {
@@ -217,7 +232,7 @@ var {
 		"comment": "<var>comment</var>",
 		"mappings": [
 			"ont::<var>trips concept name</var>",
-			"ont::<var>trips concept name</var>"
+			<var>more trips concept names...</var>
 		],
 		"roles": [
 			{
