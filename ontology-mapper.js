@@ -976,6 +976,9 @@ $(function() {
       } catch (e) {
 	throw new Error(e.message + ' in ' + name + ': ' + JSON.stringify(repConcept));
       }
+      if (warnings.length > 0) {
+	alert("Warnings:\n" + warnings.join("\n"));
+      }
     }
     // build the jsTree data
     var newJsTreeData = [];
