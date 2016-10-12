@@ -96,7 +96,15 @@ input.search {
   border: 0;
 }
 
-input:invalid {
+select {
+  /* if we don't specify this, Firefox on Linux completely changes the
+   * appearance of the selection box when we go from invalid to valid (built-in
+   * to Gtk+?)
+   */
+  background-color: white;
+}
+
+input:invalid, select:invalid {
   background-color: pink;
 }
 
