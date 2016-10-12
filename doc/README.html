@@ -220,7 +220,7 @@ var {
 
 <p>All of your concept details are editable. Fields that are required but not yet filled are <span class="invalid">highlighted in pink</span>. Extra roles are the only things that are editable in the TRIPS concept details. Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. Extra roles that aren't mapped aren't saved.</p>
 
-<p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). Click the <button>load</button> button to the left of it to load such a file back into the page.</p>
+<p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). (Safari and IE users: this might just open the file in the browser instead, so you will then have to use your browser's "save as" function, and save only the page source and not a web archive/complete webpage. IE users: upgrade to Edge. Safari users: complain to Apple and tell them to implement the <code>download</code> attribute.) Click the <button>load</button> button to the left of the <button>save</button> button to load such a file back into the page.</p>
 
 <h2>JSON Save Format</h2>
 <p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept.</p>
