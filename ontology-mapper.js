@@ -214,6 +214,8 @@ $(function() {
 	  handle.setAttribute('id', node.id + '__handle');
 	}
 	handlesG.append(handle);
+	$(handle).on('mousedown', mouseDownOnHandle);
+	$(handle).on('mouseup', mouseUpOnHandle);
       }
     }
     var linesG = $('#' + conceptOrRole + '-lines');
@@ -271,6 +273,99 @@ $(function() {
       });
     }
   }
+
+  // dragging state
+  var dragging = false;
+  var dragFromHandleID;
+  var dragFromSide; // 'trips' or 'your'
+  var draggedSide; // '1' or '2', opposite of above
+  var dragFromConceptOrRole; // 'concept' or 'role'
+  var draggedLine;
+
+  function endDragging() {
+    console.log('endDragging');
+    dragging = false;
+    draggedLine = undefined;
+    $(document.body).off('mousemove mouseup');
+  }
+
+  function discardDraggedMapping() {
+    console.log('discardDraggedMapping');
+    draggedLine.remove();
+    endDragging();
+  }
+
+  function dragPositionInSVG(evt) {
+    var svgOffset = $('#' + dragFromConceptOrRole + '-mapping').offset();
+    return {
+      x: '' + Math.floor(evt.pageX - svgOffset.left) + 'px',
+      y: '' + Math.floor(evt.pageY - svgOffset.top) + 'px'
+    };
+  }
+
+  function mouseMoveWhileDragging(evt) {
+    var pos = dragPositionInSVG(evt);
+    //console.log(pos);
+    draggedLine.attr('x' + draggedSide, pos.x);
+    draggedLine.attr('y' + draggedSide, pos.y);
+    return false;
+  }
+
+  function mouseUpWhileDragging(evt) {
+    console.log('mouseUpWhileDragging');
+    discardDraggedMapping();
+  }
+
+  // end dragging mapping, and add mapping if valid
+  function mouseUpOnHandle(evt) {
+    console.log('mouseUpOnHandle');
+    var dragToHandleID = $(this).attr('id');
+    var handlesGID = $(this).parent().attr('id');
+    var fields = handlesGID.split(/-/);
+    dragToSide = fields[0];
+    dragToConceptOrRole = fields[1];
+    // validate drag
+    if (dragToSide === dragFromSide ||
+        dragToConceptOrRole !== dragFromConceptOrRole) {
+      console.log('invalid drag');
+      discardDraggedMapping();
+      return;
+    }
+    console.log('valid drag');
+    draggedLine.attr(dragToSide + '-handle', dragToHandleID);
+    var tripsID = (dragFromSide === 'trips' ? dragFromHandleID : dragToHandleID).replace(/__handle$/,'');
+    var yourID = (dragToSide === 'trips' ? dragFromHandleID : dragToHandleID).replace(/__handle$/,'');
+    draggedLine.attr('id', tripsID + '__to__' + yourID);
+    // TODO? adjust line coords to be exactly at the centers of the handles?
+    // TODO add mapping
+    endDragging();
+    return false;
+  }
+
+  function mouseDownOnHandle(evt) {
+    console.log('mouseDownOnHandle');
+    // begin dragging mapping
+    dragging = true;
+    dragFromHandleID = $(this).attr('id');
+    var handlesGID = $(this).parent().attr('id');
+    var fields = handlesGID.split(/-/);
+    dragFromSide = fields[0];
+    draggedSide = (dragFromSide === 'trips' ? '2' : '1');
+    dragFromConceptOrRole = fields[1];
+    draggedLine = $(document.createElementNS(svgNS, 'line'));
+    var pos = dragPositionInSVG(evt);
+    draggedLine.attr('x1', pos.x);
+    draggedLine.attr('y1', pos.y);
+    draggedLine.attr('x2', pos.x);
+    draggedLine.attr('y2', pos.y);
+    draggedLine.attr(dragFromSide + '-handle', dragFromHandleID);
+    $('#' + dragFromConceptOrRole + '-lines').append(draggedLine);
+    $(document.body).on('mousemove', mouseMoveWhileDragging);
+    $(document.body).on('mouseup', mouseUpWhileDragging);
+  }
+
+  // prevent Firefox from interfering with its own drags
+  $('svg').on('dragstart', false);
 
   var jsTreeConfig = {
     core: {
