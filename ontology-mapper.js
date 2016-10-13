@@ -714,6 +714,14 @@ $(function() {
     return true;
   });
 
+  $(window).resize(function(evt) {
+    // update all the things
+    updateMap('trips', 'concept', { scroll: true, openClose: true });
+    updateMap('trips', 'role',    { scroll: true, openClose: true });
+    updateMap('your',  'concept', { scroll: true, openClose: true });
+    updateMap('your',  'role',    { scroll: true, openClose: true });
+  });
+
   $('#trips-concept-search').on('submit', function(evt) {
     evt.preventDefault();
     var search = $(this['search']).val();
@@ -1143,7 +1151,7 @@ $(function() {
 	  comment: repConcept.comment,
 	  words: repConcept.words,
 	  examples: repConcept.examples
-	}
+	};
 	var conceptMappings = [];
 	repConcept.mappings.forEach(function(m) {
 	  if (('string' !== typeof m) || !/^ont::/.test(m)) {
@@ -1152,7 +1160,7 @@ $(function() {
 	  var tripsName = m.replace(/^ont::/,'');
 	  if (tripsName in tripsOnt) {
 	    conceptMappings.push({
-	      yourConcept: repConcept,
+	      yourConcept: yourConcept,
 	      tripsConcept: tripsOnt[tripsName]
 	    });
 	  } else {
@@ -1243,6 +1251,10 @@ $(function() {
 	  treeNodesByName[rep[name].parent].children : newJsTreeData);
       siblings.push(treeNodesByName[name])
     }
+    $('#your-tree').one('load_node.jstree', function() {
+      updateMap('your', 'concept', { openClose: true });
+    });
+    yourJsTree.deselect_all();
     yourJsTree.settings.core.data = newJsTreeData;
     yourJsTree.refresh();
     yourOntByName = newOntByName;
