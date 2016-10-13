@@ -283,14 +283,14 @@ $(function() {
   var draggedLine;
 
   function endDragging() {
-    console.log('endDragging');
+    //console.log('endDragging');
     dragging = false;
     draggedLine = undefined;
     $(document.body).off('mousemove mouseup');
   }
 
   function discardDraggedMapping() {
-    console.log('discardDraggedMapping');
+    //console.log('discardDraggedMapping');
     draggedLine.remove();
     endDragging();
   }
@@ -312,13 +312,14 @@ $(function() {
   }
 
   function mouseUpWhileDragging(evt) {
-    console.log('mouseUpWhileDragging');
+    //console.log('mouseUpWhileDragging');
     discardDraggedMapping();
   }
 
   // end dragging mapping, and add mapping if valid
   function mouseUpOnHandle(evt) {
-    console.log('mouseUpOnHandle');
+    //console.log('mouseUpOnHandle');
+    if (!dragging) { return false; }
     var dragToHandleID = $(this).attr('id');
     var handlesGID = $(this).parent().attr('id');
     var fields = handlesGID.split(/-/);
@@ -331,19 +332,39 @@ $(function() {
       discardDraggedMapping();
       return;
     }
-    console.log('valid drag');
+    //console.log('valid drag');
     draggedLine.attr(dragToSide + '-handle', dragToHandleID);
     var tripsID = (dragFromSide === 'trips' ? dragFromHandleID : dragToHandleID).replace(/__handle$/,'');
     var yourID = (dragToSide === 'trips' ? dragFromHandleID : dragToHandleID).replace(/__handle$/,'');
     draggedLine.attr('id', tripsID + '__to__' + yourID);
     // TODO? adjust line coords to be exactly at the centers of the handles?
-    // TODO add mapping
+    // or just delete the line and let the call below add it again?
+    switch (dragFromConceptOrRole) {
+      case 'concept':
+        addConceptMapping(
+	    tripsOnt[tripsID.replace(/^ont__/,'')], yourOntById[yourID],
+	    draggedLine);
+	tripsJsTree.deselect_all();
+	tripsJsTree.select_node(tripsID);
+	yourJsTree.deselect_all();
+	yourJsTree.select_node(yourID);
+	break;
+      case 'role':
+        addRemRoleMapping('add',
+	    $('#' + tripsID), $('#' + yourID),
+	    draggedLine);
+	selectLi({ currentTarget: $('#' + tripsID)[0] });
+	selectLi({ currentTarget: $('#' + yourID)[0] });
+	break;
+      default:
+        throw new Error('WTF');
+    }
     endDragging();
     return false;
   }
 
   function mouseDownOnHandle(evt) {
-    console.log('mouseDownOnHandle');
+    //console.log('mouseDownOnHandle');
     // begin dragging mapping
     dragging = true;
     dragFromHandleID = $(this).attr('id');
@@ -755,6 +776,28 @@ $(function() {
     }, 0);
   });
 
+  function addConceptMapping(tripsConcept, yourConcept, line) {
+    if (line === undefined) {
+      line = addLine($('#concept-lines'), tripsID, yourID);
+    }
+    var mapping = {
+      tripsConcept: tripsConcept,
+      yourConcept: yourConcept,
+      line: line
+    };
+    yourConcept.conceptMappings.push(mapping);
+  }
+
+  function remConceptMapping(tripsConcept, yourConcept) {
+    var i =
+      yourConcept.conceptMappings.findIndex(function(m) {
+	return tripsConcept === m.tripsConcept;
+      });
+    if (i < 0) { throw new Error('WTF'); }
+    var mapping = yourConcept.conceptMappings.splice(i, 1)[0];
+    mapping.line.remove();
+  }
+
   $('#add-concept-mapping, #rem-concept-mapping').on('click', function(evt) {
     var tripsIDs = tripsJsTree.get_selected();
     var yourIDs = yourJsTree.get_selected();
@@ -767,30 +810,13 @@ $(function() {
     var tripsConcept = tripsOnt[tripsID.replace(/^ont__/,'')];
     var yourConcept = yourOntById[yourID];
     if (/^add-/.test(this.id)) {
-      var mapping = {
-	tripsConcept: tripsConcept,
-	yourConcept: yourConcept,
-	line: addLine($('#concept-lines'), tripsID, yourID)
-      };
-      yourConcept.conceptMappings.push(mapping);
+      addConceptMapping(tripsConcept, yourConcept);
     } else {
-      var i =
-        yourConcept.conceptMappings.findIndex(function(m) {
-	  return tripsConcept === m.tripsConcept;
-	});
-      if (i < 0) { throw new Error('WTF'); }
-      var mapping = yourConcept.conceptMappings.splice(i, 1)[0];
-      mapping.line.remove();
+      remConceptMapping(tripsConcept, yourConcept);
     }
   });
 
-  $('#add-role-mapping, #rem-role-mapping').on('click', function(evt) {
-    var tripsLIs = selectedLi($('#trips-roles'));
-    var yourLIs = selectedLi($('#your-roles'));
-    if (tripsLIs.length != 1 || yourLIs.length != 1) {
-      alert('Select a TRIPS role and one of your roles before clicking the add/remove mapping buttons.');
-      return;
-    }
+  function addRemRoleMapping(addOrRem, tripsLIs, yourLIs, line) {
     var tripsConceptID = tripsJsTree.get_selected()[0];
     var tripsConcept = tripsOnt[tripsConceptID.replace(/^ont__/,'')];
     var tripsRole;
@@ -805,30 +831,48 @@ $(function() {
     var yourConceptID = yourJsTree.get_selected()[0];
     var yourConcept = yourOntById[yourConceptID];
     var yourRole = yourConcept.roles[yourLIs.index()];
-    if (/^add-/.test(this.id)) {
-      var mapping = {
-	tripsConcept: tripsConcept,
-	tripsRole: tripsRole,
-	yourConcept: yourConcept,
-	yourRole: yourRole,
-	line: addLine($('#role-lines'), tripsLIs[0].id, yourLIs[0].id)
-      };
-      if (tripsRoleType !== undefined) {
-	mapping.tripsRoleType = tripsRoleType;
-      }
-      yourConcept.roleMappings.push(mapping);
-    } else {
-      var i =
-        yourConcept.roleMappings.findIndex(function(m) {
-	  return (tripsConcept === m.tripsConcept &&
-	          tripsRole === m.tripsRole &&
-		  tripsRoleType === m.tripsRoleType &&
-		  yourRole === m.yourRole);
-	});
-      if (i < 0) { throw new Error('WTF'); }
-      var mapping = yourConcept.roleMappings.splice(i, 1)[0];
-      mapping.line.remove();
+    switch (addOrRem) {
+      case 'add':
+        if (line === undefined) {
+	  line = addLine($('#role-lines'), tripsLIs[0].id, yourLIs[0].id);
+	}
+	var mapping = {
+	  tripsConcept: tripsConcept,
+	  tripsRole: tripsRole,
+	  yourConcept: yourConcept,
+	  yourRole: yourRole,
+	  line: line
+	};
+	if (tripsRoleType !== undefined) {
+	  mapping.tripsRoleType = tripsRoleType;
+	}
+	yourConcept.roleMappings.push(mapping);
+	break;
+      case 'rem':
+	var i =
+	  yourConcept.roleMappings.findIndex(function(m) {
+	    return (tripsConcept === m.tripsConcept &&
+		    tripsRole === m.tripsRole &&
+		    tripsRoleType === m.tripsRoleType &&
+		    yourRole === m.yourRole);
+	  });
+	if (i < 0) { throw new Error('WTF'); }
+	var mapping = yourConcept.roleMappings.splice(i, 1)[0];
+	mapping.line.remove();
+	break;
+      default:
+        throw new Error('WTF');
     }
+  }
+
+  $('#add-role-mapping, #rem-role-mapping').on('click', function(evt) {
+    var tripsLIs = selectedLi($('#trips-roles'));
+    var yourLIs = selectedLi($('#your-roles'));
+    if (tripsLIs.length != 1 || yourLIs.length != 1) {
+      alert('Select a TRIPS role and one of your roles before clicking the add/remove mapping buttons.');
+      return;
+    }
+    addRemRoleMapping(this.id.replace(/-.*/,''), tripsLIs, yourLIs);
   });
 
   $('#add-trips-role, #add-your-role, #add-example, #rem-trips-role, #rem-your-role, #rem-example').on('click', function(evt) {
