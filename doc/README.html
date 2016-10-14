@@ -152,8 +152,8 @@ var {
    <li>examples
   </ul>
  <li>Add/remove mappings between TRIPS concepts and your concepts.
- <li>Add/remove mappings between the roles of a TRIPS concept and the roles of your concept, when the concepts are mapped.
- <li>Add/remove mappings between specific role value types of the roles of a TRIPS concept, and the roles of your concept, when the concepts are mapped.
+ <li>Add/remove mappings between the roles of a TRIPS concept (and their fillers' roles in turn, etc.) and the roles of your concept, when the concepts are mapped.
+ <li>Add/remove mappings between specific TRIPS role filler types, and the roles of your concept, when the concepts are mapped.
  <li>Add/remove extra roles in TRIPS concepts.
  <li>Search for concepts by name in TRIPS ontology or your ontology.
  <li>Load/save your ontology and mappings as JSON.
@@ -218,12 +218,16 @@ var {
  </ul>
 </dl>
 
-<p>All of your concept details are editable. Fields that are required but not yet filled are <span class="invalid">highlighted in pink</span>. Extra roles and role value types are the only things that are editable in the TRIPS concept details. Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. Extra roles that aren't mapped aren't saved. Role value types may be added to each TRIPS role for the purpose of mapping them to your roles. The intended meaning of such mappings is that the TRIPS role will only be mapped to your role if its value is a term of the given type. The type must be a TRIPS concept name.</p>
+<p>All of your concept details are editable. Fields that are required but not yet filled are <span class="invalid">highlighted in pink</span>. Extra roles and role filler types/paths are the only things that are editable in the TRIPS concept details. Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. Extra roles that aren't mapped aren't saved.</p>
+
+<p>Role filler types may be added to each TRIPS role for the purpose of mapping them to your roles. The intended meaning of such mappings is that the TRIPS role will only be mapped to your role if the term that fills it is of the given type. The type must be a TRIPS concept name.</p>
+
+<p>In the same field, you may also specify a path through roles, and optionally filler types, to the term that should be used to fill your role. Items in the path should be separated by commas and/or spaces, and role names should have a <code>:</code> prefix to distinguish them from concept names. For example, say you have a TRIPS term graph where a term of type <code>foo</code> has a role <code>:bar</code>, filled by another term of type <code>baz</code>, which in turn has a role <code>:qux</code>. And say you have mapped <code>foo</code> to your concept <code>fred</code>, but you want <code>:qux</code> to be mapped to your role <code>:glarch</code> in this situation. Then you would click the <button>+</button> under the <code>:bar</code> role in <code>foo</code>'s details, enter <code>baz :qux</code> in the box that appears, and map that new line (instead of the whole <code>:bar</code> role) to your role <code>:glarch</code> in your concept <code>fred</code>.</p>
 
 <p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). (Safari and IE users: this might just open the file in the browser instead, so you will then have to use your browser's "save as" function, and save only the page source and not a web archive/complete webpage. IE users: upgrade to Edge. Safari users: complain to Apple and tell them to implement the <code>download</code> attribute.) Click the <button>load</button> button to the left of the <button>save</button> button to load such a file back into the page.</p>
 
 <h2>JSON Save Format</h2>
-<p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept.</p>
+<p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code> and <code>"fillerType"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept.</p>
 
 <code><pre>
 {
@@ -239,8 +243,13 @@ var {
 				"mappings": [
 					{
 						"concept": "ont::<var>trips concept name</var>",
-						"role:" "ont::<var>trips role name</var>",
-						"valueType": "ont::<var>trips concept name</var>"
+						"rolePath": [
+							{
+								"role": "ont::<var>trips role name</var>",
+								"fillerType": "ont::<var>trips concept name</var>"
+							},
+							<var>more steps (first step is required)...</var>
+						]
 					},
 					<var>more mappings...</var>
 				],
