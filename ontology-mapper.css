@@ -136,7 +136,11 @@ input:invalid, select:invalid {
 
 line {
   stroke-width: 0.1em;
-  stroke: red;
+  stroke: black;
+}
+
+line.selected {
+  stroke: blue;
 }
 
 ul.selectable {

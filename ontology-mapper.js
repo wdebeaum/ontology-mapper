@@ -109,8 +109,8 @@ $(function() {
   }
 
   /* onclick handler for selectable <li> elements */
-  window.selectLi = function(evt) {
-    var li = $(evt.currentTarget);
+  window.selectLi = function(li) {
+    var li = $(li);
     var ul = li.closest('.selectable');
     selectedLi(ul).removeClass('selected');
     li.addClass('selected');
@@ -135,7 +135,7 @@ $(function() {
 	yourScroll = $('#your-details').scrollTop();
 	break;
       default:
-        throw new Error('WTF');
+        throw new Error('WTF: ' + linesG[0]);
     }
     line.attr('x1', tripsHandle.attr('cx'));
     line.attr('y1', parseInt(tripsHandle.attr('cy')) - tripsScroll);
@@ -353,8 +353,8 @@ $(function() {
         addRemRoleMapping('add',
 	    $('#' + tripsID), $('#' + yourID),
 	    draggedLine);
-	selectLi({ currentTarget: $('#' + tripsID)[0] });
-	selectLi({ currentTarget: $('#' + yourID)[0] });
+	selectLi($('#' + tripsID)[0]);
+	selectLi($('#' + yourID)[0]);
 	break;
       default:
         throw new Error('WTF');
@@ -381,6 +381,7 @@ $(function() {
     draggedLine.attr('y2', pos.y);
     draggedLine.attr(dragFromSide + '-handle', dragFromHandleID);
     $('#' + dragFromConceptOrRole + '-lines').append(draggedLine);
+    selectLi(draggedLine[0]);
     $(document.body).on('mousemove', mouseMoveWhileDragging);
     $(document.body).on('mouseup', mouseUpWhileDragging);
   }
@@ -786,7 +787,7 @@ $(function() {
 
   function addConceptMapping(tripsConcept, yourConcept, line) {
     if (line === undefined) {
-      line = addLine($('#concept-lines'), tripsID, yourID);
+      line = addLine($('#concept-lines'), 'ont__' + tripsConcept.name, yourConcept.id);
     }
     var mapping = {
       tripsConcept: tripsConcept,
@@ -794,6 +795,7 @@ $(function() {
       line: line
     };
     yourConcept.conceptMappings.push(mapping);
+    return mapping;
   }
 
   function remConceptMapping(tripsConcept, yourConcept) {
@@ -818,7 +820,8 @@ $(function() {
     var tripsConcept = tripsOnt[tripsID.replace(/^ont__/,'')];
     var yourConcept = yourOntById[yourID];
     if (/^add-/.test(this.id)) {
-      addConceptMapping(tripsConcept, yourConcept);
+      var mapping = addConceptMapping(tripsConcept, yourConcept);
+      selectLi(mapping.line[0]);
     } else {
       remConceptMapping(tripsConcept, yourConcept);
     }
@@ -855,7 +858,7 @@ $(function() {
 	  mapping.tripsRoleType = tripsRoleType;
 	}
 	yourConcept.roleMappings.push(mapping);
-	break;
+	return mapping;
       case 'rem':
 	var i =
 	  yourConcept.roleMappings.findIndex(function(m) {
@@ -867,7 +870,7 @@ $(function() {
 	if (i < 0) { throw new Error('WTF'); }
 	var mapping = yourConcept.roleMappings.splice(i, 1)[0];
 	mapping.line.remove();
-	break;
+	return mapping;
       default:
         throw new Error('WTF');
     }
@@ -880,7 +883,11 @@ $(function() {
       alert('Select a TRIPS role and one of your roles before clicking the add/remove mapping buttons.');
       return;
     }
-    addRemRoleMapping(this.id.replace(/-.*/,''), tripsLIs, yourLIs);
+    var mapping =
+      addRemRoleMapping(this.id.replace(/-.*/,''), tripsLIs, yourLIs);
+    if (/^add-/.test(this.id)) {
+      selectLi(mapping.line[0]);
+    }
   });
 
   $('#add-trips-role, #add-your-role, #add-example, #rem-trips-role, #rem-your-role, #rem-example').on('click', function(evt) {
@@ -896,7 +903,7 @@ $(function() {
       } else if ('add-example' == this.id) {
 	newLi.on('rem', remExample);
       }
-      selectLi({ currentTarget: newLi[0] });
+      selectLi(newLi[0]);
       newLi.children().first().focus();
     } else {
       // FIXME disallow removing non-extra TRIPS roles
@@ -918,7 +925,7 @@ $(function() {
     var roleIndex = $(ul.parentNode).index();
     newLi.attr('id', newLi.attr('id').replace(/template/, '' + roleIndex));
     evt.stopPropagation(); // don't select the whole role
-    selectLi({ currentTarget: newLi[0] });
+    selectLi(newLi[0]);
     newLi.children('input').first().focus();
     updateMap('trips', 'role', { openClose: true });
   }
