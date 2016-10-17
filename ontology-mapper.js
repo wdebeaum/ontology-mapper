@@ -121,34 +121,54 @@ $(function() {
     return true;
   };
 
+  /* Return the ID of the nearest visible ancestor of the given descendant node
+   * in the given jsTree.
+   */
+  function visibleAncestorID(jsTree, descendantID) {
+    if ($('#' + descendantID).length > 0) {
+      return descendantID;
+    } else {
+      return visibleAncestorID(jsTree, jsTree.get_parent(descendantID));
+    }
+  }
+
   var svgNS = "http://www.w3.org/2000/svg";
 
-  function addLine(linesG, tripsID, yourID) {
+  function addLine(linesG, tripsID, yourID, hidden) {
     var tripsHandle = $('#' + tripsID + '__handle');
     var yourHandle = $('#' + yourID + '__handle');
-    var line = $(document.createElementNS(svgNS, 'line'));
-    var tripsScroll;
-    var yourScroll;
-    switch (linesG.attr('id')) {
-      case 'concept-lines':
-	tripsScroll = $('#trips-tree').scrollTop();
-	yourScroll = $('#your-tree').scrollTop();
-	break;
-      case 'role-lines':
-	tripsScroll = $('#trips-details').scrollTop();
-	yourScroll = $('#your-details').scrollTop();
-	break;
-      default:
-        throw new Error('WTF: ' + linesG[0]);
+    var lineID = tripsID + '__to__' + yourID;
+    var line = $('#' + lineID);
+    if (line.length == 0) { // doesn't exist yet, create it
+      line = $(document.createElementNS(svgNS, 'line'));
+      var tripsScroll;
+      var yourScroll;
+      switch (linesG.attr('id')) {
+	case 'concept-lines':
+	  tripsScroll = $('#trips-tree').scrollTop();
+	  yourScroll = $('#your-tree').scrollTop();
+	  break;
+	case 'role-lines':
+	  tripsScroll = $('#trips-details').scrollTop();
+	  yourScroll = $('#your-details').scrollTop();
+	  break;
+	default:
+	  throw new Error('WTF: ' + linesG[0]);
+      }
+      line.attr('x1', tripsHandle.attr('cx'));
+      line.attr('y1', parseInt(tripsHandle.attr('cy')) - tripsScroll);
+      line.attr('x2', yourHandle.attr('cx'));
+      line.attr('y2', parseInt(yourHandle.attr('cy')) - yourScroll);
+      line.attr('trips-handle', tripsID + '__handle');
+      line.attr('your-handle', yourID + '__handle');
+      line.attr('id', lineID);
+      if (hidden) { line.addClass('hidden'); }
+      linesG.append(line);
+    } else { // already exists, adjust class if necessary
+      if (line.hasClass('hidden') && !hidden) {
+	line.removeClass('hidden');
+      }
     }
-    line.attr('x1', tripsHandle.attr('cx'));
-    line.attr('y1', parseInt(tripsHandle.attr('cy')) - tripsScroll);
-    line.attr('x2', yourHandle.attr('cx'));
-    line.attr('y2', parseInt(yourHandle.attr('cy')) - yourScroll);
-    line.attr('trips-handle', tripsID + '__handle');
-    line.attr('your-handle', yourID + '__handle');
-    line.attr('id', tripsID + '__to__' + yourID);
-    linesG.append(line);
     return line;
   }
 
@@ -229,16 +249,22 @@ $(function() {
 	case 'concept':
 	  for (var yourID in yourOntById) {
 	    var yourConcept = yourOntById[yourID];
-	    var yourHandle = $('#' + yourID + '__handle');
+	    var yourVisibleAncestorID = visibleAncestorID(yourJsTree, yourID);
+	    var yourHandle = $('#' + yourVisibleAncestorID + '__handle');
 	    yourConcept.conceptMappings.forEach(function(m) {
 	      var tripsID = 'ont__' + m.tripsConcept.name;
-	      var tripsHandle = $('#' + tripsID + '__handle');
-	      if (yourHandle.length == 0 ||
-	          tripsHandle.length == 0) { // hidden
-		// TODO show lines for hidden concepts in a different color
-		delete m.line;
-	      } else {
-		m.line = addLine(linesG, tripsID, yourID);
+	      var tripsVisibleAncestorID =
+	        visibleAncestorID(tripsJsTree, tripsID);
+	      var tripsHandle = $('#' + tripsVisibleAncestorID + '__handle');
+	      var hidden =
+	        (yourID !== yourVisibleAncestorID ||
+		 tripsID !== tripsVisibleAncestorID);
+	      m.line =
+	        addLine(linesG, tripsVisibleAncestorID, yourVisibleAncestorID,
+			hidden);
+	      if (tripsJsTree.is_selected(tripsVisibleAncestorID) &&
+		  yourJsTree.is_selected(yourVisibleAncestorID)) {
+		m.line.addClass('selected');
 	      }
 	    });
 	  }

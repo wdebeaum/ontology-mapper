@@ -143,6 +143,10 @@ line.selected {
   stroke: blue;
 }
 
+line.hidden {
+  stroke-opacity: 0.25;
+}
+
 ul.selectable {
   list-style-position: inside;
   padding-left: 1.5em;
