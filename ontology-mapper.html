@@ -62,7 +62,7 @@
      <dt>roles<dd>
      <ul id="trips-roles" class="selectable">
       <!-- NB: don't add whitespace between li and select -->
-      <li class="template added" id="trips-role-template" onclick="selectLi(event.currentTarget)"><select onchange="inputTripsRoleName(event)" required>
+      <li class="template added" id="trips-role-template" onclick="selectRole(event.currentTarget)"><select onchange="inputTripsRoleName(event)" required>
         <option value="" disabled selected>extra role
 	<!-- see LF Documentation Appendix A: Semantic Roles -->
 	<optgroup label="Core Argument Roles">
@@ -172,13 +172,13 @@
        </select>
        (<i>optional</i>)
        <ul>
-        <li id="path-template-of-trips-role-template" class="template" onclick="selectLi(event.currentTarget); event.stopPropagation();"><input type="text" onchange="changeTripsRolePath(event)" placeholder="TRIPS concept/:role path" required>
+        <li id="path-template-of-trips-role-template" class="template" onclick="selectRole(event.currentTarget); event.stopPropagation();"><input type="text" onchange="changeTripsRolePath(event)" placeholder="TRIPS concept/:role path" required>
 	<li class="controls">role filler/path to map from: <button onclick="addTripsRolePath(event)">+</button> <button onclick="remTripsRolePath(event)">-</button>
        </ul>
-      <li id="trips-role-template" class="template original" onclick="selectLi(event.currentTarget)">
+      <li id="trips-role-template" class="template original" onclick="selectRole(event.currentTarget)">
        <!-- role desc goes here -->
        <ul>
-        <li id="path-template-of-trips-role-template" class="template" onclick="selectLi(event.currentTarget); event.stopPropagation();"><input type="text" onchange="changeTripsRolePath(event)" placeholder="TRIPS concept/:role path" required>
+        <li id="path-template-of-trips-role-template" class="template" onclick="selectRole(event.currentTarget); event.stopPropagation();"><input type="text" onchange="changeTripsRolePath(event)" placeholder="TRIPS concept/:role path" required>
 	<li class="controls">role filler/path to map from: <button onclick="addTripsRolePath(event)">+</button> <button onclick="remTripsRolePath(event)">-</button>
        </ul>
       <li class="controls"><button id="add-trips-role">+</button> <button id="rem-trips-role">-</button>
@@ -206,7 +206,7 @@
      <textarea class="comment" id="your-concept-comment"></textarea>
      <dt>roles<dd>
      <ul id="your-roles" class="selectable">
-      <li class="template" id="your-role-template" onclick="selectLi(event.currentTarget)"><input type="text" oninput="inputYourRole(event, 'name')" placeholder="role name" required>
+      <li class="template" id="your-role-template" onclick="selectRole(event.currentTarget)"><input type="text" oninput="inputYourRole(event, 'name')" placeholder="role name" required>
       <li class="controls"><button id="add-your-role">+</button> <button id="rem-your-role">-</button>
      </ul>
      <dt class="inline"><label for="your-words">words</label><dd>

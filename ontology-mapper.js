@@ -108,11 +108,15 @@ $(function() {
     return ul.find('.selected');
   }
 
+  function deselectAllLis(ul) {
+    selectedLi(ul).removeClass('selected');
+  }
+
   /* onclick handler for selectable <li> elements */
   window.selectLi = function(li) {
     var li = $(li);
     var ul = li.closest('.selectable');
-    selectedLi(ul).removeClass('selected');
+    deselectAllLis(ul);
     li.addClass('selected');
     return true;
   };
@@ -242,11 +246,17 @@ $(function() {
 	case 'role':
 	  var tripsIDs = tripsJsTree.get_selected();
 	  var yourIDs = yourJsTree.get_selected();
+	  var conceptLine;
 	  if (tripsIDs.length == 1 && yourIDs.length == 1) {
 	    var tripsID = tripsIDs[0];
 	    var yourID = yourIDs[0];
 	    var tripsConcept = tripsOnt[tripsID.replace(/^ont__/,'')];
 	    var yourConcept = yourOntById[yourID];
+	    var conceptMapping = yourConcept.conceptMappings.find(function(m) { return (m.tripsConcept === tripsConcept); });
+	    if (conceptMapping !== undefined) {
+	      conceptLine = conceptMapping.line;
+	      selectLi(conceptLine);
+	    }
 	    yourConcept.roleMappings.forEach(function(m) {
 	      if (m.tripsConcept === tripsConcept) {
 		var tripsRoleIndex = tripsConcept.dynamic_sem_frame.indexOf(m.tripsRole);
@@ -262,6 +272,9 @@ $(function() {
 		delete m.line;
 	      }
 	    });
+	  }
+	  if (conceptLine === undefined) {
+	    deselectAllLis($('#concept-lines'));
 	  }
 	  break;
 	default:
@@ -719,6 +732,17 @@ $(function() {
     updateMap('your', 'role', { scroll: true });
     return true;
   });
+
+  window.selectRole = function(li) {
+    selectLi(li);
+    // select only the mapping between the selected roles if it exists
+    var tripsLi = selectedLi($('#trips-roles'));
+    var yourLi = selectedLi($('#your-roles'));
+    var line = $('#' + tripsLi.attr('id') + '__to__' + yourLi.attr('id'));
+    deselectAllLis($('#role-lines'));
+    selectLi(line);
+    return true;
+  };
 
   $(window).resize(function(evt) {
     // update all the things
