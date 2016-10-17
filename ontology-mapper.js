@@ -453,6 +453,11 @@ $(function() {
 	$('#trips-tree').on('loaded.jstree', function() {
 	  updateMap('trips', 'concept', { openClose: true });
 	});
+	$('#trips-concept-search input').autocomplete({
+	  minLength: 3,
+	  source: Object.keys(tripsOnt),
+	  select: function(evt, ui) { tripsConceptSearch(evt.target.value); }
+	});
       }).
       fail(function(jqXHR, textStatus, errorThrown) {
 	console.log({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
@@ -475,6 +480,21 @@ $(function() {
 
   $('#your-tree').on('loaded.jstree', function() {
     updateMap('your', 'concept', { openClose: true });
+  });
+
+  $('#your-concept-search input').autocomplete({
+    minLength: 3,
+    // can't use Object.keys(yourOntByName) directly here, because it might
+    // change
+    source: function(request, response) {
+      var allNames = Object.keys(yourOntByName);
+      var matchingNames =
+        allNames.filter(function(name) {
+	  return (name.indexOf(request.term) >= 0);
+	});
+      response(matchingNames);
+    },
+    select: function(evt, ui) { yourConceptSearch(evt.target.value); }
   });
 
   /* Modify childFeats to include any parts of parentFeats that it doesn't
@@ -778,9 +798,7 @@ $(function() {
     updateMap('your',  'role',    { scroll: true, openClose: true });
   });
 
-  $('#trips-concept-search').on('submit', function(evt) {
-    evt.preventDefault();
-    var search = $(this['search']).val();
+  function tripsConceptSearch(search) {
     console.log('searching trips ontology for concept named ' + search);
     if (search in tripsOnt) {
       tripsJsTree.deselect_all();
@@ -789,11 +807,14 @@ $(function() {
     } else {
       alert(search + ' not found');
     }
+  }
+
+  $('#trips-concept-search').on('submit', function(evt) {
+    evt.preventDefault();
+    tripsConceptSearch($(this['search']).val());
   });
 
-  $('#your-concept-search').on('submit', function(evt) {
-    evt.preventDefault();
-    var search = $(this['search']).val();
+  function yourConceptSearch(search) {
     console.log('searching your ontology for concept named ' + search);
     if (search in yourOntByName) {
       var id = yourOntByName[search].id;
@@ -803,6 +824,11 @@ $(function() {
     } else {
       alert(search + ' not found');
     }
+  }
+
+  $('#your-concept-search').on('submit', function(evt) {
+    evt.preventDefault();
+    yourConceptSearch($(this['search']).val());
   });
 
   $('#rem-concept').on('click', function() {
