@@ -41,6 +41,31 @@ h1, h2, h3 {
   overflow: auto;
 }
 
+div.word-counts {
+  display: inline-block;
+  vertical-align: top;
+  width: 2em;
+}
+
+div.word-counts ul {
+  margin: 0;
+  padding: 0;
+}
+
+div.word-counts li {
+  list-style-type: none;
+  text-align: right;
+  height: 24px; /* match jsTree */
+  margin: 0;
+  padding: 0;
+  color: blue;
+}
+
+div.jstree {
+  display: inline-block;
+  width: calc(100% - 2em);
+}
+
 dl {
   margin: 0;
 }

@@ -6,4 +6,5 @@
 str.*.template.xsl
 old
 dsl
+data
 jquery-ui*

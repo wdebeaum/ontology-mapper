@@ -145,8 +145,8 @@ $(function() {
       var yourScroll;
       switch (linesG.attr('id')) {
 	case 'concept-lines':
-	  tripsScroll = $('#trips-tree').scrollTop();
-	  yourScroll = $('#your-tree').scrollTop();
+	  tripsScroll = $('#trips-tree-scroll').scrollTop();
+	  yourScroll = $('#your-tree-scroll').scrollTop();
 	  break;
 	case 'role-lines':
 	  tripsScroll = $('#trips-details').scrollTop();
@@ -174,7 +174,7 @@ $(function() {
 
   function scrollLine(side, treeOrDetails, line) {
     var coord = ('trips' === side ? 'y1' : 'y2');
-    var scroll = $('#' + side + '-' + treeOrDetails).scrollTop();
+    var scroll = $('#' + side + '-' + ((treeOrDetails === 'tree') ? 'tree-scroll' : 'details')).scrollTop();
     var handle = $('#' + line.attr(side + '-handle'));
     line.attr(coord, parseInt(handle.attr('cy')) - scroll);
   }
@@ -186,7 +186,7 @@ $(function() {
     if (opts.scroll) {
       var scroll =
           $('#' + side + '-' +
-		  (('concept' === conceptOrRole) ? 'tree' : 'details')
+		  (('concept' === conceptOrRole) ? 'tree-scroll' : 'details')
 	  ).scrollTop();
       handlesG.attr('transform', 'translate(0, ' + (-scroll) + ')');
     }
@@ -268,6 +268,31 @@ $(function() {
 	      }
 	    });
 	  }
+	  // if exactly one node is selected on the opposite side, call
+	  // updateWordCounts(side, that node's concept)
+	  var oppositeSide = ((side === 'trips') ? 'your' : 'trips');
+	  var oppositeSelectedIDs =
+	    window[oppositeSide + 'JsTree'].get_selected();
+	  if (oppositeSelectedIDs.length === 1) {
+	    switch (side) {
+	      case 'trips':
+	        // on the trips side, we need to look up words first
+	        lookupAndUpdateWordCounts(yourOntById[oppositeSelectedIDs[0]]);
+		break;
+	      case 'your':
+	        updateWordCounts(side, tripsOnt[oppositeSelectedIDs[0].replace(/^ont__/, '')]);
+		break;
+	      default:
+	        throw new Error('WTF');
+	    }
+	  } else { // not exactly one opposite node selected
+	    // just add blank lis so we still get the stripes
+	    var ul = $('#' + side + '-word-counts');
+	    ul.empty();
+	    $('#' + side + '-tree li').each(function() {
+	      ul.append($('<li>'));
+	    });
+	  }
 	  break;
 	case 'role':
 	  var tripsIDs = tripsJsTree.get_selected();
@@ -311,6 +336,194 @@ $(function() {
 	scrollLine(side, ('concept' === conceptOrRole ? 'tree' : 'details'), $(line));
       });
     }
+  }
+
+  /* Return a version of array that is sorted and has duplicates removed (as if
+   * run through unix "| sort | uniq").
+   */
+  function sortUniq(array) {
+    // sort a copy
+    var ret = [].concat(array).sort();
+    // splice out runs of duplicates
+    for (var i = 0; i < ret.length; i++) {
+      var j;
+      for (j = i + 1; j < ret.length; j++) {
+	if (ret[i] !== ret[j]) {
+	  break;
+	}
+      }
+      if (j > i + 1) {
+	ret.splice(i + 1, j - (i + 1));
+      }
+    }
+    return ret;
+  }
+
+  function wordsDirectlyInConcept(side, concept) {
+    switch (side) {
+      case 'trips':
+        if ('senses' in concept) {
+          return sortUniq(concept.senses.map(function(s) { return s.word }));
+	} else {
+	  return [];
+	}
+      case 'your':
+        return sortUniq(concept.words);
+      default:
+        throw new Error('WTF');
+    }
+  }
+
+  function wordsInConceptOrDescendants(side, concept) {
+    var id = (side === 'trips' ? 'ont__' + concept.name : concept.id);
+    var jsTree = window[side + 'JsTree'];
+    var words = wordsDirectlyInConcept(side, concept);
+    jsTree.get_node(id).children.forEach(function(childID) {
+      var childWords = wordsInConceptOrDescendants(side,
+        (side === 'trips' ?
+	  tripsOnt[childID.replace(/^ont__/,'')] :
+	  yourOntById[childID]));
+      words = words.concat(childWords);
+    });
+    return sortUniq(words);
+  }
+  window.wordsDirectlyInConcept = wordsDirectlyInConcept;
+  window.wordsInConceptOrDescendants = wordsInConceptOrDescendants;
+
+  function updateWordCounts(side, oppositeConcept) {
+    //console.log('updateWordCounts(' + side + ', ' + oppositeConcept.name + ')');
+    var jsTree = window[side + 'JsTree'];
+    var oppositeSide = ((side === 'trips') ? 'your' : 'trips');
+    var oppositeJsTree = window[oppositeSide + 'JsTree'];
+    var oppositeID =
+      ((oppositeSide === 'trips') ?
+        'ont__' + oppositeConcept.name : oppositeConcept.id);
+    var oppositeWords =
+      (oppositeJsTree.is_closed(oppositeID) ?
+	// NOTE: we know we have all the words in the descendants even when
+	// oppositeSite=='trips', because we either added them this session and
+	// looked them up then, or we loaded a file, and we looked up all the
+	// words from the file then. This lets us avoid looking up the entire
+	// tree if someone selects ONT::root.
+        wordsInConceptOrDescendants(oppositeSide, oppositeConcept) :
+	// else, node is open or has no children
+        wordsDirectlyInConcept(oppositeSide, oppositeConcept));
+    var ul = $('#' + side + '-word-counts');
+    ul.empty();
+    var exactlyOneSelected = (jsTree.get_selected().length === 1);
+    // iterate over visible nodes (see also updateMap)
+    var firstNode = jsTree.element.children().children()[0]; // HACK
+    var done = function(node) { return !node; };
+    var nextNode = function(node) { return jsTree.get_next_dom(node)[0]; };
+    for (var node = firstNode; !done(node); node = nextNode(node)) {
+      var concept =
+        ((side === 'trips') ?
+	  tripsOnt[node.id.replace(/^ont__/,'')] :
+	  yourOntById[node.id]);
+      var words =
+        (jsTree.is_closed(node.id) ?
+	  wordsInConceptOrDescendants(side, concept) :
+	  wordsDirectlyInConcept(side, concept));
+      // find the intersection of words and oppositeWords
+      var intersection =
+	oppositeWords.filter(function(w) {
+	  return words.includes(w);
+	});
+      var li = $('<li>');
+      li.attr('id', node.id + '__word-count');
+      if (intersection.length > 0) {
+	li.text(intersection.length);
+	li.attr('title', intersection.join(', '));
+      }
+      ul.append(li);
+      // also update the opposite word count if this is the only selected node
+      if (exactlyOneSelected && jsTree.is_selected(node)) {
+	var oppositeLi = $('#' + oppositeID + '__word-count');
+	if (intersection.length > 0) {
+	  oppositeLi.text(intersection.length);
+	  oppositeLi.attr('title', intersection.join(', '));
+	} else {
+	  oppositeLi.empty();
+	  oppositeLi.removeAttr('title');
+	}
+      }
+    }
+  }
+
+  /* Make sure that all TRIPS concepts that have senses of any of the given
+   * words actually have those senses loaded into tripsOnt, and call the done()
+   * callback once they do.
+   */
+  var wordsAlreadyLookedUp = {};
+  function lookUpWords(words, done) {
+    while (words.length > 0 && wordsAlreadyLookedUp[words[0]]) {
+      words.shift();
+    }
+    if (words.length === 0) {
+      done();
+    } else {
+      var word = words.shift();
+      wordsAlreadyLookedUp[word] = true;
+      $.ajax({
+	url: DSL_DATA_PATH + '../data/' +
+	     encodeURIComponent('W::' + word.replace(/\s+/, '_') + '.xml'),
+	dataType: 'xml'
+      // on success, make sure each TRIPS concept named $name from <CLASS
+      // onttype="$name"> has its senses loaded, and then continue looking up
+      // this list of words
+      }).done(function(data) {
+	var classElements = $(data).find('CLASS').toArray();
+	// this recursive, nested function is really a forEach loop over
+	// classElements, with async parts
+	function processNextClassElement() {
+	  if (classElements.length === 0) {
+	    lookUpWords(words, done);
+	  } else {
+	    var name = $(classElements.shift()).attr('onttype');
+	    ensureSenses(name, processNextClassElement);
+	  }
+	}
+	processNextClassElement();
+      // on failure, just continue looking up this list of words
+      }).fail(function() {
+	lookUpWords(words, done);
+      });
+    }
+  }
+
+  var updateWordCountsTimeoutID;
+  var wordLookupCallback;
+  function lookupAndUpdateWordCounts(yourConcept) {
+    // limit how often we do this, since it's an expensive enough operation
+    // that we don't want to do it on each keystroke
+    clearTimeout(updateWordCountsTimeoutID);
+    updateWordCountsTimeoutID =
+      setTimeout(function() {
+	// we want to do lookUpWords and then updateWordCounts, but since
+	// lookUpWords is async but not reentrant, and we're already calling
+	// this asynchronously with setTimeout, we have to be careful to queue
+	// up calls to lookUpWords
+	function doMyLookup() {
+	  wordLookupCallback = function() {
+	    updateWordCounts('trips', yourConcept);
+	  };
+		      // need to pass a copy because lookUpWords shifts out of
+		      // its argument
+	  lookUpWords([].concat(yourConcept.words), function() {
+	    wordLookupCallback();
+	    wordLookupCallback = undefined;
+	  });
+	}
+	if (wordLookupCallback === undefined) { // not busy, just do it
+	  doMyLookup();
+	} else { // lookUpWords is busy, schedule doMyLookup after existing CB
+	  var oldWordLookupCallback = wordLookupCallback;
+	  wordLookupCallback = function() {
+	    oldWordLookupCallback();
+	    doMyLookup();
+	  };
+	}
+      }, 200); // milliseconds
   }
 
   // dragging state
@@ -598,7 +811,7 @@ $(function() {
     if ('senses' in concept) {
       done();
     } else {
-      $.ajax(DSL_DATA_PATH + 'ONT%3a%3a' + conceptName + '.xml', { dataType: 'xml' }).
+      $.ajax(DSL_DATA_PATH + encodeURIComponent('ONT::' + conceptName + '.xml'), { dataType: 'xml' }).
 	done(function(conceptDSL) {
 	  concept.senses = xslTransformAndEval(dslToJSON, conceptDSL);
 	  done();
@@ -704,7 +917,9 @@ $(function() {
 	});
       });
       $('#trips-details').show();
+      updateWordCounts('your', concept);
     } else {
+      $('#your-word-counts li').empty();
       $('#trips-details').hide();
     }
     // let things render before updating map
@@ -738,7 +953,9 @@ $(function() {
 	$(newLi.children()[0]).val(example);
       });
       $('#your-details').show();
+      lookupAndUpdateWordCounts(concept);
     } else {
+      $('#trips-word-counts li').empty();
       $('#your-details').hide();
     }
     updateMap('your', 'role', { openClose: true });
@@ -759,12 +976,12 @@ $(function() {
     return true;
   });
 
-  $('#trips-tree').on('scroll', function(evt) {
+  $('#trips-tree-scroll').on('scroll', function(evt) {
     updateMap('trips', 'concept', { scroll: true });
     return true;
   });
 
-  $('#your-tree').on('scroll', function(evt) {
+  $('#your-tree-scroll').on('scroll', function(evt) {
     updateMap('your', 'concept', { scroll: true });
     return true;
   });
@@ -1225,7 +1442,9 @@ $(function() {
   $('#your-words').on('input', function(evt) {
     var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
-    concept.words = $(this).val().trim().split(/\s*,\s*/);
+    concept.words = $(this).val().trim().replace(/\s+/, ' ').split(/\s*,\s*/);
+    lookupAndUpdateWordCounts(concept);
+    return true;
   });
 
   window.inputYourExample = function(evt) {
@@ -1301,6 +1520,7 @@ $(function() {
     var newOntById = {};
     var treeNodesByName = {};
     var treeNodeIndex = 1;
+    var allWords = [];
     for (var name in rep) {
       if (name === 'ontologySaveDate') { continue; }
       var repConcept = rep[name];
@@ -1335,6 +1555,7 @@ $(function() {
 	  words: repConcept.words,
 	  examples: repConcept.examples
 	};
+	allWords = allWords.concat(repConcept.words);
 	var conceptMappings = [];
 	repConcept.mappings.forEach(function(m) {
 	  if (('string' !== typeof m) || !/^ont::/.test(m)) {
@@ -1471,7 +1692,15 @@ $(function() {
       siblings.push(treeNodesByName[name])
     }
     $('#your-tree').one('load_node.jstree', function() {
-      updateMap('your', 'concept', { openClose: true });
+      // look up all words used in your concepts
+      allWords = sortUniq(allWords);
+      lookUpWords(allWords, function() {
+	// when that's done, update the map UI
+        updateMap('your', 'concept', { openClose: true });
+      });
+      // FIXME there is a danger that the user will do something that calls
+      // lookUpWords before the above call finishes, but hopefully they will
+      // wait until they see the map UI update before doing anything
     });
     yourJsTree.deselect_all();
     yourJsTree.settings.core.data = newJsTreeData;
