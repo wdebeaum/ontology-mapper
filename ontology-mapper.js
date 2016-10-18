@@ -999,6 +999,54 @@ $(function() {
     }
   });
 
+  function autocompleteTripsRolePath(request, response) {
+    var fields =
+      request.term.toLowerCase().replace(/^[,\s]+/,'').split(/[,\s]+/);
+    var butLast = fields.slice(0,fields.length-1).join(' ');
+    var lastPrefix = fields[fields.length-1];
+    var data = [];
+    // decide what to include in the response, roles and/or concepts
+    var includeRoles = false;
+    var includeConcepts = false;
+    if (lastPrefix === '') {
+      includeRoles = true;
+      /* actually, this is a bad idea, since it would include the whole ont
+      var secondToLast = fields[fields.length-2];
+      if (/^:/.test(secondToLast)) {
+	includeConcepts = true;
+      }*/
+    } else if (/^:/.test(lastPrefix)) {
+      includeRoles = true;
+    } else if (lastPrefix.length >= 3) { // see also minLength
+      includeConcepts = true;
+    }
+    // include roles first, since it's a shorter list
+    if (includeRoles) {
+      $('#trips-role-template option').each(function(i, o) {
+	if ((!o.disabled) &&
+	    o.text.length >= lastPrefix.length &&
+	    o.text.substr(0, lastPrefix.length) === lastPrefix) {
+	  data.push({
+	    label: o.text,
+	    value: butLast + ' ' + o.text
+	  });
+	}
+      });
+    }
+    if (includeConcepts) {
+      Object.keys(tripsOnt).forEach(function(name) {
+	if (name.length >= lastPrefix.length &&
+	    name.substr(0, lastPrefix.length) === lastPrefix) {
+	  data.push({
+	    label: name,
+	    value: butLast + ' ' + name
+	  });
+	}
+      });
+    }
+    response(data);
+  }
+
   window.addTripsRolePath = function(evt) {
     var ul = evt.currentTarget.parentNode.parentNode;
     var newLi = addLiBeforeTemplate(ul);
@@ -1011,7 +1059,11 @@ $(function() {
     newLi.attr('id', newLi.attr('id').replace(/template/, '' + roleIndex));
     evt.stopPropagation(); // don't select the whole role
     selectLi(newLi[0]);
-    newLi.children('input').first().focus();
+    var input = newLi.children('input');
+    input.autocomplete({
+      source: autocompleteTripsRolePath
+    });
+    input.first().focus();
     updateMap('trips', 'role', { openClose: true });
   }
 
@@ -1028,12 +1080,14 @@ $(function() {
     var concept = tripsOnt[id.replace(/^ont__/,'')];
     var role = concept.dynamic_sem_frame[roleIndex];
     try {
-      var values = input.value.toLowerCase().split(/[,\s]+/);
+      var values = input.value.toLowerCase().trim().split(/[,\s]+/);
       var newPath = [];
       var lastStep = {};
       newPath.push(lastStep);
       values.forEach(function(v) {
-	if (/^:/.test(v)) { // role
+	if ('' === v) {
+	  throw 'Please enter a TRIPS concept name, a TRIPS role name, or a path of role names with optional concepts, or click the [-] button to remove this field.';
+	} else if (/^:/.test(v)) { // role
 	  lastStep = { role: v.replace(/^:/,'') };
 	  if (!isTripsRoleName(lastStep.role)) {
 	    throw 'Not a trips role name: :' + lastStep.role;
@@ -1050,6 +1104,7 @@ $(function() {
 	  lastStep.fillerType = fillerType;
 	}
       });
+      input.value = values.join(' '); // normalize value
       // replace old path with newPath, but keep same Array object, in order to
       // preserve references
       var path = role.paths[pathIndex];
@@ -1062,7 +1117,7 @@ $(function() {
 
   window.remTripsRolePath = function(evt) {
     var oldLi = remLiBeforeTemplate(evt.currentTarget.parentNode.parentNode);
-    var idFields = oldLi.split(/-/); // type-#-of-trips-role-#
+    var idFields = oldLi.attr('id').split(/-/); // type-#-of-trips-role-#
     var roleIndex = parseInt(idFields[5]);
     var pathIndex = parseInt(idFields[1]);
     var id = tripsJsTree.get_selected()[0];

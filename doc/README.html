@@ -159,6 +159,7 @@ var {
  <li>Load/save your ontology and mappings as JSON.
  <li>Display mappings between concepts that aren't visible because that part of the tree is collapsed, as if they were mappings between their nearest visible ancestors, except partially transparent.
  <li>Autocomplete concept search boxes.
+ <li>Autocomplete role filler type/path boxes.
 </ul>
 
 <h4>Planned Features</h4>
@@ -168,13 +169,13 @@ var {
  <li>Display mappings between TRIPS concepts and WordNet senses in the TRIPS concept details, and use them as extra words for the above point.
  <li>Extend mapping lines into tree views, up to the name of the concept.
  <li>Export to/import from other formats, e.g. DSL, OWL.
- <li>Autocomplete role filler type boxes.
 </ul>
 
 <h3>Known Bugs</h3>
 <ul>
  <li>Role "-" buttons remove the last role instead of the selected one.
  <li>It's possible to "remove" non-extra TRIPS roles. The removal will not be saved.
+ <li>Removing TRIPS roles/filler types/paths does not remove their mappings. For now, just make sure to remove mappings first.
  <li>Your concept details pane doesn't display inherited roles, and it's thus not possible to map them.
  <li>There are gaps on the right and bottom sides of the map panes.
  <li>Tree nodes remain selected even after they are hidden because an ancestor was collapsed.
