@@ -92,12 +92,16 @@ $(function() {
     return newLi;
   }
 
-  /* Remove the li just before li.template, if any, and return it (or null). */
-  function remLiBeforeTemplate(ul) {
+  /* Remove the li just before li.template, if any, and return it (or null). If
+   * an isRemovable function is supplied, check that it returns true before
+   * removing the li.
+   */
+  function remLiBeforeTemplate(ul, isRemovable) {
     var oldLi = $(ul).children('li.template').first().prev('li');
-    if (oldLi.length == 0) {
-      return null;
-    } else {
+    if (oldLi.length == 0 ||
+        (isRemovable !== undefined && !isRemovable(oldLi))) {
+      return null; // no removable li
+    } else { // have removable li
       oldLi.trigger('rem');
       oldLi.remove();
       return oldLi;
@@ -106,6 +110,22 @@ $(function() {
 
   function selectedLi(ul) {
     return ul.find('.selected');
+  }
+
+  /* Like remLiBeforeTemplate, except remove the selected li if there is one
+   * (otherwise still remove the one before the template).
+  */
+  function remSelectedLi(ul, isRemovable) {
+    var oldLi = $(ul).children('li.selected');
+    if (oldLi.length == 0) { // nothing selected
+      return remLiBeforeTemplate(ul, isRemovable); // fall back
+    } else if (isRemovable !== undefined && !isRemovable(oldLi)) {
+      return null; // not removable
+    } else { // selected and removable
+      oldLi.trigger('rem');
+      oldLi.remove();
+      return oldLi;
+    }
   }
 
   function deselectAllLis(ul) {
@@ -1217,8 +1237,11 @@ $(function() {
       selectLi(newLi[0]);
       newLi.children().first().focus();
     } else {
-      // FIXME disallow removing non-extra TRIPS roles
-      remLiBeforeTemplate(ul);
+      if (this.id === 'rem-trips-role') {
+	remSelectedLi(ul, function(li) { return li.hasClass('added'); });
+      } else { // rem your role or example
+	remSelectedLi(ul);
+      }
     }
     if (/-roles$/.test(ul.id)) {
       var side = (/^your-/.test(ul.id) ? 'your' : 'trips');
@@ -1232,6 +1255,9 @@ $(function() {
     var fields =
       request.term.toLowerCase().replace(/^[,\s]+/,'').split(/[,\s]+/);
     var butLast = fields.slice(0,fields.length-1).join(' ');
+    if (butLast !== '') {
+      butLast += ' ';
+    }
     var lastPrefix = fields[fields.length-1];
     var data = [];
     // decide what to include in the response, roles and/or concepts
@@ -1257,7 +1283,7 @@ $(function() {
 	    o.text.substr(0, lastPrefix.length) === lastPrefix) {
 	  data.push({
 	    label: o.text,
-	    value: butLast + ' ' + o.text
+	    value: butLast + o.text
 	  });
 	}
       });
@@ -1268,7 +1294,7 @@ $(function() {
 	    name.substr(0, lastPrefix.length) === lastPrefix) {
 	  data.push({
 	    label: name,
-	    value: butLast + ' ' + name
+	    value: butLast + name
 	  });
 	}
       });
@@ -1345,7 +1371,8 @@ $(function() {
   }
 
   window.remTripsRolePath = function(evt) {
-    var oldLi = remLiBeforeTemplate(evt.currentTarget.parentNode.parentNode);
+    var oldLi = remSelectedLi(evt.currentTarget.parentNode.parentNode);
+    if (oldLi === null) { return; }
     var idFields = oldLi.attr('id').split(/-/); // type-#-of-trips-role-#
     var roleIndex = parseInt(idFields[5]);
     var pathIndex = parseInt(idFields[1]);
@@ -1355,12 +1382,16 @@ $(function() {
     if (role.paths[pathIndex] !== undefined) {
       var rolePath;
       if (pathIndex == role.paths.length - 1) {
+	// can just pop off the path
 	rolePath = role.paths.pop();
-	// TODO remove roleMappings from your ontology that use this
       } else {
-	// FIXME splice instead, and adjust indexes in IDs
-	rolePath = role.paths[pathIndex];
-	role.paths[pathIndex] = undefined;
+	// adjust IDs of all following lis
+	for (var i = pathIndex + 1; i < role.paths.length; i++) {
+	  $('#path-' +  i    + '-of-trips-role-' + roleIndex).attr('id',
+	     'path-' + (i-1) + '-of-trips-role-' + roleIndex);
+	}
+	// splice out the path
+	rolePath = role.paths.splice(pathIndex, 1);
       }
       // get mappings to be removed, and remove them from TRIPS side
       var mappings = [];
@@ -1400,17 +1431,29 @@ $(function() {
   };
 
   function remTripsRole(evt) {
+    // 'rem' event from remTripsRolePath can bubble up here, so check that
+    // evt.target is really a trips role li before proceeding
+    if (!/^trips-role-/.test(evt.target.id)) { return; }
     var id = tripsJsTree.get_selected()[0];
     var concept = tripsOnt[id.replace(/^ont__/,'')];
     var i = $(this).index();
     if (concept.dynamic_sem_frame[i] !== undefined) {
       var role;
       if (concept.dynamic_sem_frame.length == i+1) {
+	// can just pop off the role
 	role = concept.dynamic_sem_frame.pop();
       } else {
-	// FIXME shift role li IDs
-	role = concept.dynamic_sem_frame[i];
-	concept.dynamic_sem_frame[i] = undefined;
+	// adjust IDs of all following lis
+	for (var j = i + 1; j < concept.dynamic_sem_frame.length; j++) {
+	  $('#trips-role-' +  j   ).attr('id',
+	    '#trips-role-' + (j-1));
+	  concept.dynamic_sem_frame[j].paths.forEach(function(path, k) {
+	    $('#path-' + k + '-of-trips-role-' +  j   ).attr('id',
+	       'path-' + k + '-of-trips-role-' + (j-1));
+	  });
+	}
+	// splice out the role
+	role = concept.dynamic_sem_frame.splice(i, 1);
       }
       // get mappings to be removed, and remove them from TRIPS side
       var mappings = [];
@@ -1484,11 +1527,16 @@ $(function() {
     if (concept.roles[i] !== undefined) {
       var role;
       if (concept.roles.length == i+1) {
+	// can just pop off the role
 	role = concept.roles.pop();
       } else {
-	// FIXME shift role li IDs
-	role = concept.roles[i];
-	concept.roles[i] = undefined;
+	// adjust IDs of all following lis
+	for (var j = i + 1; j < concept.roles.length; j++) {
+	  $('#your-role-' +  j   ).attr('id',
+	     'your-role-' + (j-1));
+	}
+	// splice out the role
+	role = concept.roles.splice(i, 1);
       }
       // get mappings to be removed, and remove them from your side
       var mappings = [];
@@ -1530,13 +1578,14 @@ $(function() {
     var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
     var i = $(this).parent().index();
-    if (concept.examples.length <= i) {
-      // do nothing
-    } else if (concept.examples.length == i+1) {
-      concept.examples.pop();
-    } else {
-      // FIXME shift example li IDs
-      concept.examples[i] = undefined;
+    if (concept.examples[i] !== undefined) {
+      if (concept.examples.length == i+1) {
+	concept.examples.pop();
+      } else {
+	// this really shouldn't happen since examples aren't selectable
+	console.log('TODO shift example li IDs');
+	concept.examples[i] = undefined;
+      }
     }
   }
 
