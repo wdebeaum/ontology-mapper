@@ -94,7 +94,7 @@ $(function() {
 
   /* Remove the li just before li.template, if any, and return it (or null). */
   function remLiBeforeTemplate(ul) {
-    var oldLi = $(ul).children('li.template').prev('li');
+    var oldLi = $(ul).children('li.template').first().prev('li');
     if (oldLi.length == 0) {
       return null;
     } else {
@@ -658,6 +658,7 @@ $(function() {
       done(function(tripsOntDSL) {
 	window.tripsOnt = xslTransformAndEval(dslToJSON, tripsOntDSL);
 	setXSLParameter(dslToJSON, 'senses-only', true);
+	for (var name in tripsOnt) { tripsOnt[name].roleMappings = []; }
 	var tree = makeTripsOntTree(tripsOnt);
 	$('#trips-tree').jstree(
 	  $.extend(true, { core: { data: tree } }, jsTreeConfig)
@@ -902,6 +903,7 @@ $(function() {
 	if (roleRestrMap.added) {
 	  li.children('select').first().
 	    val(roleRestrMap.roles.replace(/^ont:/,''));
+	  li.on('rem', remTripsRole);
 	} else {
 	  li.prepend(formatRole(roleRestrMap));
 	}
@@ -1053,6 +1055,13 @@ $(function() {
     yourJsTree.delete_node(treeNodes);
     treeNodes.forEach(function(node) {
       var concept = yourOntById[node.id];
+      // remove role mappings from their trips concepts, and remove lines
+      concept.roleMappings.forEach(function(m) {
+	var i = m.tripsConcept.roleMappings.indexOf(m);
+	if (i < 0) { throw new Error('WTF'); }
+	m.tripsConcept.roleMappings.splice(i, 1);
+	if (m.line !== undefined) { m.line.remove(); }
+      });
       delete yourOntById[node.id];
       delete yourOntByName[concept.name];
     });
@@ -1156,6 +1165,7 @@ $(function() {
 	  mapping.tripsRolePath = tripsRolePath;
 	}
 	yourConcept.roleMappings.push(mapping);
+	tripsConcept.roleMappings.push(mapping); // so we can remove this mapping if the role itself goes away later
 	return mapping;
       case 'rem':
 	var i =
@@ -1168,6 +1178,9 @@ $(function() {
 	if (i < 0) { throw new Error('WTF'); }
 	var mapping = yourConcept.roleMappings.splice(i, 1)[0];
 	mapping.line.remove();
+	var j = tripsConcept.roleMappings.indexOf(mapping);
+	if (j < 0) { throw new Error('WTF'); }
+	tripsConcept.roleMappings.splice(j, 1);
 	return mapping;
       default:
         throw new Error('WTF');
@@ -1205,7 +1218,6 @@ $(function() {
       newLi.children().first().focus();
     } else {
       // FIXME disallow removing non-extra TRIPS roles
-      // TODO remove roleMappings from your ontology that use this role if this is #rem-*-role
       remLiBeforeTemplate(ul);
     }
     if (/-roles$/.test(ul.id)) {
@@ -1341,13 +1353,33 @@ $(function() {
     var concept = tripsOnt[id.replace(/^ont__/,'')];
     var role = concept.dynamic_sem_frame[roleIndex];
     if (role.paths[pathIndex] !== undefined) {
+      var rolePath;
       if (pathIndex == role.paths.length - 1) {
-	role.paths.pop();
+	rolePath = role.paths.pop();
 	// TODO remove roleMappings from your ontology that use this
       } else {
 	// FIXME splice instead, and adjust indexes in IDs
+	rolePath = role.paths[pathIndex];
 	role.paths[pathIndex] = undefined;
       }
+      // get mappings to be removed, and remove them from TRIPS side
+      var mappings = [];
+      concept.roleMappings =
+	concept.roleMappings.filter(function(m) {
+	  if (m.tripsRole === role && m.tripsRolePath === rolePath) {
+	    mappings.push(m);
+	    return false;
+	  } else {
+	    return true;
+	  }
+	});
+      // then remove mappings from your side, and remove lines
+      mappings.forEach(function(m) {
+	var i = m.yourConcept.roleMappings.indexOf(m);
+	if (i < 0) { throw new Error('WTF'); }
+	m.yourConcept.roleMappings.splice(i, 1);
+	if (m.line !== undefined) { m.line.remove(); }
+      });
     }
     updateMap('trips', 'role', { openClose: true });
   }
@@ -1370,14 +1402,34 @@ $(function() {
   function remTripsRole(evt) {
     var id = tripsJsTree.get_selected()[0];
     var concept = tripsOnt[id.replace(/^ont__/,'')];
-    var i = $(this).parent().index();
-    if (concept.dynamic_sem_frame.length <= i) {
-      // do nothing
-    } else if (concept.dynamic_sem_frame.length == i+1) {
-      concept.dynamic_sem_frame.pop();
-    } else {
-      // FIXME shift role li IDs
-      concept.dynamic_sem_frame[i] = undefined;
+    var i = $(this).index();
+    if (concept.dynamic_sem_frame[i] !== undefined) {
+      var role;
+      if (concept.dynamic_sem_frame.length == i+1) {
+	role = concept.dynamic_sem_frame.pop();
+      } else {
+	// FIXME shift role li IDs
+	role = concept.dynamic_sem_frame[i];
+	concept.dynamic_sem_frame[i] = undefined;
+      }
+      // get mappings to be removed, and remove them from TRIPS side
+      var mappings = [];
+      concept.roleMappings =
+	concept.roleMappings.filter(function(m) {
+	  if (m.tripsRole === role) {
+	    mappings.push(m);
+	    return false;
+	  } else {
+	    return true;
+	  }
+	});
+      // then remove mappings from your side, and remove lines
+      mappings.forEach(function(m) {
+	var i = m.yourConcept.roleMappings.indexOf(m);
+	if (i < 0) { throw new Error('WTF'); }
+	m.yourConcept.roleMappings.splice(i, 1);
+	if (m.line !== undefined) { m.line.remove(); }
+      });
     }
   }
 
@@ -1428,14 +1480,34 @@ $(function() {
   function remYourRole(evt) {
     var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
-    var i = $(this).parent().index();
-    if (concept.roles.length <= i) {
-      // do nothing
-    } else if (concept.roles.length == i+1) {
-      concept.roles.pop();
-    } else {
-      // FIXME shift role li IDs
-      concept.roles[i] = undefined;
+    var i = $(this).index();
+    if (concept.roles[i] !== undefined) {
+      var role;
+      if (concept.roles.length == i+1) {
+	role = concept.roles.pop();
+      } else {
+	// FIXME shift role li IDs
+	role = concept.roles[i];
+	concept.roles[i] = undefined;
+      }
+      // get mappings to be removed, and remove them from your side
+      var mappings = [];
+      concept.roleMappings =
+	concept.roleMappings.filter(function(m) {
+	  if (m.yourRole === role) {
+	    mappings.push(m);
+	    return false;
+	  } else {
+	    return true;
+	  }
+	});
+      // then remove mappings from TRIPS side, and remove lines
+      mappings.forEach(function(m) {
+	var i = m.tripsConcept.roleMappings.indexOf(m);
+	if (i < 0) { throw new Error('WTF'); }
+	m.tripsConcept.roleMappings.splice(i, 1);
+	if (m.line !== undefined) { m.line.remove(); }
+      });
     }
   }
 
@@ -1521,6 +1593,7 @@ $(function() {
     var treeNodesByName = {};
     var treeNodeIndex = 1;
     var allWords = [];
+    for (var name in tripsOnt) { tripsOnt[name].roleMappings = []; }
     for (var name in rep) {
       if (name === 'ontologySaveDate') { continue; }
       var repConcept = rep[name];
@@ -1665,6 +1738,7 @@ $(function() {
 		newMapping.tripsRolePath = path;
 	      }
 	      roleMappings.push(newMapping);
+	      tripsConcept.roleMappings.push(newMapping);
 	    } else {
 	      warn('your concept ' + name + "'s role " + r.name + ' has a mapping to a non-existent trips concept ' + tripsName + '; role mapping deleted');
 	    }
