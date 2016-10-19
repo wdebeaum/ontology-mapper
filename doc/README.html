@@ -160,7 +160,7 @@ var {
  <li>Display mappings between concepts that aren't visible because that part of the tree is collapsed, as if they were mappings between their nearest visible ancestors, except partially transparent.
  <li>Autocomplete concept search boxes.
  <li>Autocomplete role filler type/path boxes.
- <li>When a concept in one ontology is selected, and it has words associated with it, each concept in the other ontology displays how many of those words (if any) are associated with it or its descendants, next to its node in the tree view.
+ <li>Word counts next to each concept show how many words under that concept are also under the selected concept on the other side.
 </ul>
 
 <h4>Planned Features</h4>
@@ -219,7 +219,11 @@ var {
  </ul>
 </dl>
 
-<p>All of your concept details are editable. Fields that are required but not yet filled are <span class="invalid">highlighted in pink</span>. Extra roles and role filler types/paths are the only things that are editable in the TRIPS concept details. Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. Extra roles that aren't mapped aren't saved.</p>
+<p>All of your concept details are editable. Fields that are required but not yet filled are <span class="invalid">highlighted in pink</span>.</p>
+
+<p>The optional words field enables you to easily see which concepts share words between the TRIPS ontology and your ontology. When a concept in one ontology is selected, and it has words associated with it, each concept in the other ontology displays how many of those words (if any) are associated with it, next to its node in the tree view. If the node is collapsed, the words associated with its hidden descendants are also included. Each word is counted only once, even if it is associated with multiple descendants. If you place your mouse cursor over the number, a tooltip will appear, showing you which words are shared.</p>
+
+<p>Extra roles and role filler types/paths are the only things that are editable in the TRIPS concept details. Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. Extra roles that aren't mapped aren't saved.</p>
 
 <p>Role filler types may be added to each TRIPS role for the purpose of mapping them to your roles. The intended meaning of such mappings is that the TRIPS role will only be mapped to your role if the term that fills it is of the given type. The type must be a TRIPS concept name.</p>
 
