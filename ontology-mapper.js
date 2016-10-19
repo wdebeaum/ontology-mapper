@@ -1747,6 +1747,7 @@ $(function() {
 		var newPath = [];
 		//m.rolePath.forEach(function(step, j) { // still need continue
 		for (var j = 0; j < m.rolePath.length; j++) {
+		  var step = m.rolePath[j];
 		  if (j != 0 || ('fillerType' in step)) {
 		    var newStep = {};
 		    if (j != 0) {
