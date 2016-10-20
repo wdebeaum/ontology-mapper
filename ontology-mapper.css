@@ -41,6 +41,20 @@ h1, h2, h3 {
   overflow: auto;
 }
 
+#details dd > input {
+  width: calc(100% - 6em);
+}
+
+#details li > input {
+  width: calc(100% - 4em);
+}
+
+#your-examples {
+  /* so that the width of the input isn't shortened by the bullet */
+  list-style-position: inside;
+  padding-left: 1.5em;
+}
+
 div.word-counts {
   display: inline-block;
   vertical-align: top;
@@ -143,7 +157,7 @@ input:invalid, select:invalid {
 
 .comment {
   white-space: normal;
-  width: calc(100% - 1em - 4px);
+  width: calc(100% - 2em - 4px);
   margin-left: 1em;
 }
 
