@@ -693,6 +693,9 @@ $(function() {
     }
   };
 
+  window.tripsTreeLoaded = false;
+  window.yourTreeLoaded = false;
+
   var dslToJSON;
   loadXSL('dsl-to-json.xsl', function(dslToJSONarg) {
     dslToJSON = dslToJSONarg;
@@ -706,8 +709,16 @@ $(function() {
 	  $.extend(true, { core: { data: tree } }, jsTreeConfig)
 	);
 	window.tripsJsTree = $.jstree.reference('trips-tree');
+	// update concept map once both trees are loaded
 	$('#trips-tree').on('loaded.jstree', function() {
-	  updateMap('trips', 'concept', { openClose: true });
+	  tripsTreeLoaded = true;
+	  if (yourTreeLoaded) {
+	    updateMap('trips', 'concept', { openClose: true });
+	  } else {
+	    $('#your-tree').one('loaded.jstree', function() {
+	      updateMap('trips', 'concept', { openClose: true });
+	    });
+	  }
 	});
 	$('#trips-concept-search input').autocomplete({
 	  minLength: 3,
@@ -738,8 +749,16 @@ $(function() {
   window.yourOntByName = {};
   window.yourOntById = {};
 
+  // update concept map once both trees are loaded
   $('#your-tree').on('loaded.jstree', function() {
-    updateMap('your', 'concept', { openClose: true });
+    yourTreeLoaded = true;
+    if (tripsTreeLoaded) {
+      updateMap('your', 'concept', { openClose: true });
+    } else {
+      $('#trips-tree').one('loaded.jstree', function() {
+	updateMap('your', 'concept', { openClose: true });
+      });
+    }
   });
 
   $('#your-concept-search input').autocomplete({

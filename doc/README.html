@@ -193,7 +193,6 @@ var {
   </ul>
  <li>Load/save bugs:
   <ul>
-   <li>There is a race between the two tree views loading at startup/file load time. If your tree finishes loading before the TRIPS tree, the mappings may not be updated properly.
    <li>Once I saw it save a file with an empty <code>"rolePath"</code> field (which it then rightly refuses to load), but I wasn't able to reproduce the problem, and I don't see how it's even possible.
    <li>If a load fails, the program may be left in an inconsistent state, rather than the state it was in before the load was attempted. Extra things added to the TRIPS side may be deleted, even though mappings may still depend on them. Workaround: reload the page.
    <li>If the word count feature is somehow triggered after a file load but before the UI is finished updating, it may be put into an inconsistent state.
