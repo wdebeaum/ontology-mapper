@@ -161,11 +161,19 @@ var {
  <li>Autocomplete concept search boxes.
  <li>Autocomplete role filler type/path boxes.
  <li>Word counts next to each concept show how many words under that concept are also under the selected concept on the other side.
+ <li>Inheritance of:
+  <ul>
+   <li>Original TRIPS roles, and their restrictions
+   <li>Extra TRIPS roles (WIP)
+   <li>TRIPS role filler types/paths (WIP)
+   <li>your roles
+   <li>role mappings (WIP)
+  </ul>
+  Inherited things are gray instead of black.
 </ul>
 
 <h4>Planned Features</h4>
 <ul>
- <li>Inherit role mapping defaults, and display inherited mappings in a different color.
  <li>Display mappings between TRIPS concepts and WordNet senses in the TRIPS concept details, and use them as extra words for the word count feature.
  <li>Extend mapping lines into tree views, up to the name of the concept.
  <li>Export to/import from other formats, e.g. DSL, OWL.
@@ -173,10 +181,24 @@ var {
 
 <h3>Known Bugs</h3>
 <ul>
- <li>Your concept details pane doesn't display inherited roles, and it's thus not possible to map them.
  <li>There are gaps on the right and bottom sides of the map panes.
  <li>Tree nodes remain selected even after they are hidden because an ancestor was collapsed.
  <li>It's possible to map roles when the corresponding concepts aren't mapped yet (maybe that should cause the concepts to be mapped, and conversely removing a concept mapping should remove the role mappings too).
+ <li>Inheritance bugs:
+  <ul>
+   <li>Role mappings are only inherited on your side, not the TRIPS side.
+   <li>Extra TRIPS roles and role filler types/paths are only inherited if you never showed the descendant concept's details before adding the inherited parts to the ancestor concept.
+   <li>Similarly, some inherited extra TRIPS stuff may not appear inherited after a load, because it gets added after inheritance is computed.
+   <li>Role filler types/paths are only inherited if they were initially defined on a non-inherited role.
+  </ul>
+ <li>Load/save bugs:
+  <ul>
+   <li>There is a race between the two tree views loading at startup/file load time. If your tree finishes loading before the TRIPS tree, the mappings may not be updated properly.
+   <li>If you try to load the same filename that you loaded previously, nothing happens. Workaround: reload the page, then load the file.
+   <li>Once I saw it save a file with an empty <code>"rolePath"</code> field (which it then rightly refuses to load), but I wasn't able to reproduce the problem, and I don't see how it's even possible.
+   <li>If a load fails, the program may be left in an inconsistent state, rather than the state it was in before the load was attempted. Extra things added to the TRIPS side may be deleted, even though mappings may still depend on them. Workaround: reload the page.
+   <li>If the word count feature is somehow triggered after a file load but before the UI is finished updating, it may be put into an inconsistent state.
+  </ul>
 </ul>
 
 <h2>Usage</h2>

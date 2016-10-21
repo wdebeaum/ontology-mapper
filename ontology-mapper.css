@@ -182,6 +182,14 @@ line.selected {
   stroke: blue;
 }
 
+line.inherited {
+  stroke: #666;
+}
+
+line.selected.inherited {
+  stroke: #66f;
+}
+
 line.hidden {
   stroke-opacity: 0.25;
 }
