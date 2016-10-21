@@ -1934,7 +1934,8 @@ $(function() {
 		    }
 		    newPath.push(newStep);
 		  }
-		} //);
+		}
+		//});
 		// FIXME some paths that would have been inherited won't be
 		// found here because they're only attached to stuff later in
 		// the file being loaded
@@ -1957,7 +1958,8 @@ $(function() {
 	    } else {
 	      warn('your concept ' + name + "'s role " + r.name + ' has a mapping to a non-existent trips concept ' + tripsName + '; role mapping deleted');
 	    }
-	  } //);
+	  }
+	  //});
 	});
 	yourConcept.conceptMappings = conceptMappings;
 	yourConcept.roles = roles;
