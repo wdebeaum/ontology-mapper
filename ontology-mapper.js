@@ -799,7 +799,7 @@ $(function() {
   /* Fill semFeatsOut={} and semFrameOut=[] by going up the hierarchy from
    * concept. If inherited=true, mark any roles added this way as inherited.
    */
-  function applyTripsInheritance(concept, semFeatsOut, semFrameOut, inherited) {
+/*  function applyTripsInheritance(concept, semFeatsOut, semFrameOut, inherited) {
     // fill semFeatsOut
     if ('sem_feats' in concept) {
       mergeFeats(semFeatsOut, concept.sem_feats);
@@ -896,15 +896,114 @@ $(function() {
           tripsOnt[concept.inherit], semFeatsOut, semFrameOut, true);
     }
   }
-
+*/
   /* call applyTripsInheritance if necessary */
-  function ensureTripsInheritance(concept) {
+/*  function ensureTripsInheritance(concept) {
     if (!('dynamic_sem_frame' in concept)) {
       var sem_feats = {};
       var sem_frame = [];
       applyTripsInheritance(concept, sem_feats, sem_frame);
       concept.dynamic_sem_feats = sem_feats;
       concept.dynamic_sem_frame = sem_frame;
+    }
+  }
+*/
+  function applyTripsInheritance(concept, ancestor) {
+    // if we're just starting, get rid of any old inherited stuff
+    if (ancestor === undefined) {
+      concept.roleMappings = (concept.roleMappings || []).filter(function(m) {
+	return m.tripsConcept === concept;
+      });
+      if ('dynamic_sem_frame' in concept) {
+	// no need to bother with sem_feats, since it's not editable at all
+	concept.dynamic_sem_feats =
+	  concept.dynamic_sem_feats.filter(function(roleRestrMap) {
+	    return !roleRestrMap.inherited;
+	  });
+      } else {
+	// shallow copy sem_frame
+	concept.dynamic_sem_frame =
+	  (('sem_frame' in concept) ? [].concat(concept.sem_frame) : []);
+	// deep copy sem_feats in concept and within sem_frame
+	concept.dynamic_sem_feats =
+	  (('sem_feats' in concept) ?
+	    $.extend(true, {}, concept.sem_feats) : {});
+	concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
+	  roleRestrMap.dynamic_sem_feats =
+	    (('sem_feats' in roleRestrMap) ?
+	      $.extend(true, {}, roleRestrMap.sem_feats) : {});
+	});
+      }
+      // reconstruct paths lists from roleMappings
+      concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
+	var paths =
+	  concept.roleMappings.filter(function(m) {
+	    return m.tripsRole === roleRestrMap && ('tripsRolePath' in m);
+	  }).map(function(m) { return m.tripsRolePath })
+	// remove dupes
+	for (var i = 0; i < paths.length; i++) {
+	  for (var j = i + 1; j < paths.length; ) {
+	    if (paths[i] === paths[j]) {
+	      paths.splice(j, 1);
+	    } else {
+	      j++;
+	    }
+	  }
+	}
+	roleRestrMap.paths = paths;
+      });
+    } else { // at an ancestor
+      // add the ancestor's roleMappings, new roleRestrMaps, and paths
+      if ('roleMappings' in ancestor) {
+        ancestor.roleMappings.forEach(function(am) {
+	  if (am.tripsConcept === ancestor && // not inherited
+	      // don't already have an overriding mapping
+	      concept.roleMappings.every(function(cm) {
+		return !(am.tripsRole === cm.tripsRole &&
+		         am.tripsRolePath === cm.tripsRolePath &&
+			 am.yourConcept === cm.yourConcept);
+	      })) {
+	    concept.roleMappings.push(am);
+	  }
+	});
+      }
+      var ancestor_sem_frame =
+        (('dynamic_sem_frame' in ancestor) ?
+	  ancestor.dynamic_sem_frame : ancestor.sem_frame);
+      ancestor_sem_frame.forEach(function(aRoleRestrMap) {
+	if (!aRoleRestrMap.inherited) {
+	  var aRoles = aRoleRestrMap.roles.split(' ');
+	  var cRoleRestrMap =
+	    concept.dynamic_sem_frame.find(function(r) {
+	      return r.roles.split(' ').includes(aRoles[0]);
+	    });
+	  if (cRoleRestrMap === undefined) {
+	    cRoleRestrMap = { __proto__: aRoleRestrMap, inherited: true };
+	    concept.dynamic_sem_frame.push(cRoleRestrMap);
+	  } else {
+	    if ('sem_feats' in aRoleRestrMap) {
+	      mergeFeats(cRoleRestrMap.dynamic_sem_feats,
+			 aRoleRestrMap.sem_feats);
+	    }
+	    // add non-inherited paths
+	    if ('paths' in aRoleRestrMap) {
+	      cRoleRestrMap.paths =
+	        cRoleRestrMap.paths.concat(
+		  aRoleRestrMap.paths.filter(function(path) {
+		    return !path.inherited;
+		  }).map(function(path) {
+		    return { __proto__: path, inherited: true };
+		  })
+		);
+	    }
+	  }
+	}
+      });
+    }
+    // recurse on parent of ancestor
+    var tripsParentID = tripsJsTree.get_parent(ancestor.id);
+    if (tripsParentID !== '#') {
+      applyTripsInheritance(concept, tripsOnt[tripsParentID.replace(/^ont__/, '')]);
     }
   }
 
@@ -946,12 +1045,12 @@ $(function() {
       var fltype = '';
       var feats = '';
       if ('sem_feats' in roleRestrMap.restriction) {
-	if ('inherit' in roleRestrMap.restriction.sem_feats) {
-	  fltype = formatFLType(roleRestrMap.restriction.sem_feats.inherit);
+	if ('inherit' in roleRestrMap.restriction.dynamic_sem_feats) {
+	  fltype = formatFLType(roleRestrMap.restriction.dynamic_sem_feats.inherit);
 	}
-	if ('features' in roleRestrMap.restriction.sem_feats) {
+	if ('features' in roleRestrMap.restriction.dynamic_sem_feats) {
 	  feats =
-	    $.map(roleRestrMap.restriction.sem_feats.features, function(v, k) {
+	    $.map(roleRestrMap.restriction.dynamic_sem_feats.features, function(v, k) {
 	      return k + ': ' + formatMaybeDisj(v);
 	    }).join('');
 	}
@@ -962,7 +1061,7 @@ $(function() {
   }
 
   function showTripsRoles(concept) {
-    ensureTripsInheritance(concept);
+    applyTripsInheritance(concept);
     var sem_feats = concept.dynamic_sem_feats;
     var sem_frame = concept.dynamic_sem_frame;
     // TODO sem_feats?
@@ -976,11 +1075,12 @@ $(function() {
       } else {
 	li.addClass('own');
       }
-      if (roleRestrMap.added) {
+      if (roleRestrMap.added && !roleRestrMap.inherited) {
 	li.children('select').first().
 	  val(roleRestrMap.roles.replace(/^ont:/,''));
 	li.on('rem', remTripsRole);
       } else {
+	li.find('select').remove(); // in case added&inherited
 	li.prepend(formatRole(roleRestrMap));
       }
       roleRestrMap.paths.forEach(function(path) {
@@ -1053,7 +1153,7 @@ $(function() {
 	});
       ancestor = concept;
     } else { // at an ancestor
-      // add the ancestor's mappings and new roles
+      // add the ancestor's roleMappings and new roles
       ancestor.roles.forEach(function(role) {
 	if ((!role.inherited) && // don't trust ancestor's inherited roles
 	    !concept.roles.find(function(r) { return r.name === role.name; })) {
@@ -1878,7 +1978,7 @@ $(function() {
 	    var tripsName = m.concept.replace(/^ont::/,'');
 	    if (tripsName in tripsOnt) {
 	      var tripsConcept = tripsOnt[tripsName];
-	      ensureTripsInheritance(tripsConcept);
+	      applyTripsInheritance(tripsConcept);
 	      var tripsRoleName = m.rolePath[0].role;
 	      if (('string' !== typeof tripsRoleName) || !/^ont::/.test(tripsRoleName)) {
 		fail('expected role mapping role to be a string starting with ont::');
