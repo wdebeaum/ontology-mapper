@@ -2009,6 +2009,11 @@ $(function() {
 	loadFromSavableRepresentation(rep);
       } catch (e) {
 	alert('Error loading file ' + file.name + ': ' + e.message);
+      } finally {
+	// reset the file input so that we get a change event again even if
+	// we're loading from the same filename
+	// NOTE: $('#file-input').val('') doesn't work for security reasons
+	$('#file-input-form')[0].reset();
       }
     };
     reader.readAsText(file);
