@@ -909,8 +909,10 @@ $(function() {
   }
 */
   function applyTripsInheritance(concept, ancestor) {
+    var justStarting = (ancestor === undefined);
     // if we're just starting, get rid of any old inherited stuff
-    if (ancestor === undefined) {
+    if (justStarting) {
+      ancestor = concept;
       concept.roleMappings = (concept.roleMappings || []).filter(function(m) {
 	return m.tripsConcept === concept;
       });
@@ -939,25 +941,6 @@ $(function() {
 	  }
 	});
       }
-      // reconstruct paths lists from roleMappings
-      concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
-	var paths =
-	  concept.roleMappings.filter(function(m) {
-	    return m.tripsRole === roleRestrMap && ('tripsRolePath' in m);
-	  }).map(function(m) { return m.tripsRolePath })
-	// remove dupes
-	for (var i = 0; i < paths.length; i++) {
-	  for (var j = i + 1; j < paths.length; ) {
-	    if (paths[i] === paths[j]) {
-	      paths.splice(j, 1);
-	    } else {
-	      j++;
-	    }
-	  }
-	}
-	roleRestrMap.paths = paths;
-      });
-      ancestor = concept;
     } else { // at an ancestor
       // add the ancestor's roleMappings, new roleRestrMaps, and paths
       if ('roleMappings' in ancestor) {
@@ -990,9 +973,6 @@ $(function() {
 	    });
 	  if (cRoleRestrMap === undefined) {
 	    cRoleRestrMap = { __proto__: aRoleRestrMap, inherited: true };
-	    if (!('paths' in cRoleRestrMap)) {
-	      cRoleRestrMap.paths = [];
-	    }
 	    concept.dynamic_sem_frame.push(cRoleRestrMap);
 	  } else {
 	    if (('restriction' in aRoleRestrMap) &&
@@ -1007,17 +987,6 @@ $(function() {
 		};
 	      }
 	    }
-	    // add non-inherited paths
-	    if ('paths' in aRoleRestrMap) {
-	      cRoleRestrMap.paths =
-	        cRoleRestrMap.paths.concat(
-		  aRoleRestrMap.paths.filter(function(path) {
-		    return !path.inherited;
-		  }).map(function(path) {
-		    return { __proto__: path, inherited: true };
-		  })
-		);
-	    }
 	  }
 	}
       });
@@ -1026,6 +995,26 @@ $(function() {
     var tripsParentID = tripsJsTree.get_parent('ont__' + ancestor.name);
     if (tripsParentID !== '#') {
       applyTripsInheritance(concept, tripsOnt[tripsParentID.replace(/^ont__/, '')]);
+    }
+    if (justStarting) {
+      // reconstruct paths lists from roleMappings
+      concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
+	var paths =
+	  concept.roleMappings.filter(function(m) {
+	    return m.tripsRole === roleRestrMap && ('tripsRolePath' in m);
+	  }).map(function(m) { return m.tripsRolePath })
+	// remove dupes
+	for (var i = 0; i < paths.length; i++) {
+	  for (var j = i + 1; j < paths.length; ) {
+	    if (paths[i] === paths[j]) {
+	      paths.splice(j, 1);
+	    } else {
+	      j++;
+	    }
+	  }
+	}
+	roleRestrMap.paths = paths;
+      });
     }
   }
 
