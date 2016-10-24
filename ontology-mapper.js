@@ -1165,6 +1165,7 @@ $(function() {
       updateWordCounts('your', concept);
     } else {
       $('#your-word-counts li').empty();
+      clearUlUpToTemplate($('#trips-roles')); // so we don't re-add handles
       $('#trips-details').hide();
     }
     // let things render before updating map
@@ -1249,6 +1250,7 @@ $(function() {
       lookupAndUpdateWordCounts(concept);
     } else {
       $('#trips-word-counts li').empty();
+      clearUlUpToTemplate($('#your-roles')); // so we don't re-add handles
       $('#your-details').hide();
     }
     updateMap('your', 'role', { openClose: true });
@@ -2119,6 +2121,8 @@ $(function() {
       lookUpWords(allWords, function() {
 	// when that's done, update the map UI
         updateMap('your', 'concept', { openClose: true });
+	// in case a concept was selected already and we changed the paths in it
+	updateMap('trips', 'role', { openClose: true });
       });
       // FIXME there is a danger that the user will do something that calls
       // lookUpWords before the above call finishes, but hopefully they will
