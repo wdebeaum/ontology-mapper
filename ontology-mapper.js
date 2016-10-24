@@ -916,8 +916,8 @@ $(function() {
       });
       if ('dynamic_sem_frame' in concept) {
 	// no need to bother with sem_feats, since it's not editable at all
-	concept.dynamic_sem_feats =
-	  concept.dynamic_sem_feats.filter(function(roleRestrMap) {
+	concept.dynamic_sem_frame =
+	  concept.dynamic_sem_frame.filter(function(roleRestrMap) {
 	    return !roleRestrMap.inherited;
 	  });
       } else {
@@ -929,9 +929,14 @@ $(function() {
 	  (('sem_feats' in concept) ?
 	    $.extend(true, {}, concept.sem_feats) : {});
 	concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
-	  roleRestrMap.dynamic_sem_feats =
-	    (('sem_feats' in roleRestrMap) ?
-	      $.extend(true, {}, roleRestrMap.sem_feats) : {});
+	  if ('restriction' in roleRestrMap) {
+	    if ('sem_feats' in roleRestrMap.restriction) {
+	      roleRestrMap.restriction.dynamic_sem_feats =
+		$.extend(true, {}, roleRestrMap.restriction.sem_feats);
+	    } else {
+	      delete roleRestrMap.restriction;
+	    }
+	  }
 	});
       }
       // reconstruct paths lists from roleMappings
@@ -952,6 +957,7 @@ $(function() {
 	}
 	roleRestrMap.paths = paths;
       });
+      ancestor = concept;
     } else { // at an ancestor
       // add the ancestor's roleMappings, new roleRestrMaps, and paths
       if ('roleMappings' in ancestor) {
@@ -967,9 +973,14 @@ $(function() {
 	  }
 	});
       }
-      var ancestor_sem_frame =
-        (('dynamic_sem_frame' in ancestor) ?
-	  ancestor.dynamic_sem_frame : ancestor.sem_frame);
+      var ancestor_sem_frame;
+      if ('dynamic_sem_frame' in ancestor) {
+	ancestor_sem_frame = ancestor.dynamic_sem_frame;
+      } else if ('sem_frame' in ancestor) {
+	ancestor_sem_frame = ancestor.sem_frame;
+      } else {
+	ancestor_sem_frame = [];
+      }
       ancestor_sem_frame.forEach(function(aRoleRestrMap) {
 	if (!aRoleRestrMap.inherited) {
 	  var aRoles = aRoleRestrMap.roles.split(' ');
@@ -979,11 +990,22 @@ $(function() {
 	    });
 	  if (cRoleRestrMap === undefined) {
 	    cRoleRestrMap = { __proto__: aRoleRestrMap, inherited: true };
+	    if (!('paths' in cRoleRestrMap)) {
+	      cRoleRestrMap.paths = [];
+	    }
 	    concept.dynamic_sem_frame.push(cRoleRestrMap);
 	  } else {
-	    if ('sem_feats' in aRoleRestrMap) {
-	      mergeFeats(cRoleRestrMap.dynamic_sem_feats,
-			 aRoleRestrMap.sem_feats);
+	    if (('restriction' in aRoleRestrMap) &&
+	        ('sem_feats' in aRoleRestrMap.restriction)) {
+	      if ('restriction' in cRoleRestrMap) {
+		mergeFeats(cRoleRestrMap.restriction.dynamic_sem_feats,
+			   aRoleRestrMap.restriction.sem_feats);
+	      } else {
+		cRoleRestrMap.restriction = {
+		  dynamic_sem_feats:
+		    $.extend(true, {}, aRoleRestrMap.restriction.sem_feats)
+		};
+	      }
 	    }
 	    // add non-inherited paths
 	    if ('paths' in aRoleRestrMap) {
@@ -1001,7 +1023,7 @@ $(function() {
       });
     }
     // recurse on parent of ancestor
-    var tripsParentID = tripsJsTree.get_parent(ancestor.id);
+    var tripsParentID = tripsJsTree.get_parent('ont__' + ancestor.name);
     if (tripsParentID !== '#') {
       applyTripsInheritance(concept, tripsOnt[tripsParentID.replace(/^ont__/, '')]);
     }
@@ -1044,7 +1066,7 @@ $(function() {
     if ('restriction' in roleRestrMap) {
       var fltype = '';
       var feats = '';
-      if ('sem_feats' in roleRestrMap.restriction) {
+      if ('dynamic_sem_feats' in roleRestrMap.restriction) {
 	if ('inherit' in roleRestrMap.restriction.dynamic_sem_feats) {
 	  fltype = formatFLType(roleRestrMap.restriction.dynamic_sem_feats.inherit);
 	}
