@@ -156,6 +156,7 @@ $(function() {
   var svgNS = "http://www.w3.org/2000/svg";
 
   function addLine(linesG, tripsID, yourID, hidden) {
+    //console.log({ fn: 'addLine', linesG: linesG, tripsID: tripsID, yourID: yourID, hidden: hidden });
     var tripsHandle = $('#' + tripsID + '__handle');
     var yourHandle = $('#' + yourID + '__handle');
     var lineID = tripsID + '__to__' + yourID;
@@ -1006,11 +1007,13 @@ $(function() {
       applyTripsInheritance(concept, tripsOnt[tripsParentID.replace(/^ont__/, '')]);
     }
     if (justStarting) {
-      // reconstruct paths lists from roleMappings
+      // reconstruct paths lists from roleMappings, and fix inherited role
+      // references
       concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
 	var paths =
 	  concept.roleMappings.filter(function(m) {
-	    return m.tripsRole === roleRestrMap && ('tripsRolePath' in m);
+	    return m.tripsRole.roles === roleRestrMap.roles &&
+	           ('tripsRolePath' in m);
 	  }).map(function(m) { return m.tripsRolePath })
 	// remove dupes
 	for (var i = 0; i < paths.length; i++) {
@@ -1023,6 +1026,12 @@ $(function() {
 	  }
 	}
 	roleRestrMap.paths = paths;
+	// fix inherited role references
+	concept.roleMappings.forEach(function(m) {
+	  if (m.tripsRole.roles === roleRestrMap.roles) {
+	    m.tripsRole = roleRestrMap;
+	  }
+	});
       });
     }
   }
