@@ -1726,7 +1726,7 @@ $(function() {
 	// adjust IDs of all following lis
 	for (var j = i + 1; j < concept.dynamic_sem_frame.length; j++) {
 	  $('#trips-role-' +  j   ).attr('id',
-	    '#trips-role-' + (j-1));
+	     'trips-role-' + (j-1));
 	  concept.dynamic_sem_frame[j].paths.forEach(function(path, k) {
 	    $('#path-' + k + '-of-trips-role-' +  j   ).attr('id',
 	       'path-' + k + '-of-trips-role-' + (j-1));
