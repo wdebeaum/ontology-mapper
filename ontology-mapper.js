@@ -930,19 +930,19 @@ $(function() {
 	concept.dynamic_sem_feats =
 	  (('sem_feats' in concept) ?
 	    $.extend(true, {}, concept.sem_feats) : {});
-	concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
-	  if ('restriction' in roleRestrMap) {
-	    if ('sem_feats' in roleRestrMap.restriction) {
-	      roleRestrMap.restriction.dynamic_sem_feats =
-		$.extend(true, {}, roleRestrMap.restriction.sem_feats);
-	    } else {
-	      delete roleRestrMap.restriction;
-	    }
-	  }
-	});
       }
+      concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
+	if ('restriction' in roleRestrMap) {
+	  if ('sem_feats' in roleRestrMap.restriction) {
+	    roleRestrMap.restriction.dynamic_sem_feats =
+	      $.extend(true, {}, roleRestrMap.restriction.sem_feats);
+	  } else {
+	    delete roleRestrMap.restriction;
+	  }
+	}
+      });
     } else { // at an ancestor
-      // add the ancestor's roleMappings, new roleRestrMaps, and paths
+      // add the ancestor's roleMappings and new roleRestrMaps
       if ('roleMappings' in ancestor) {
         ancestor.roleMappings.forEach(function(am) {
 	  if (am.tripsConcept === ancestor && // not inherited
@@ -973,6 +973,15 @@ $(function() {
 	    });
 	  if (cRoleRestrMap === undefined) {
 	    cRoleRestrMap = { __proto__: aRoleRestrMap, inherited: true };
+	    if (('restriction' in cRoleRestrMap) &&
+		!('dynamic_sem_feats' in cRoleRestrMap.restriction)) {
+	      if ('sem_feats' in cRoleRestrMap.restriction) {
+		cRoleRestrMap.restriction.dynamic_sem_feats =
+		  $.extend(true, {}, cRoleRestrMap.restriction.sem_feats);
+	      } else {
+		cRoleRestrMap.restriction.dynamic_sem_feats = {};
+	      }
+	    }
 	    concept.dynamic_sem_frame.push(cRoleRestrMap);
 	  } else {
 	    if (('restriction' in aRoleRestrMap) &&
@@ -1066,7 +1075,9 @@ $(function() {
 	    }).join('');
 	}
       }
-      restriction = 'restricted to ' + fltype + feats;
+      if (fltype !== '' || feats !== '') {
+	restriction = 'restricted to ' + fltype + feats;
+      }
     }
     return roleNames + optionality + restriction;
   }
@@ -2078,7 +2089,7 @@ $(function() {
 	newOntByName[name] = yourConcept;
 	newOntById[yourConcept.id] = yourConcept;
       } catch (e) {
-	throw new Error(e.message + ' in ' + name + ': ' + JSON.stringify(repConcept));
+	throw new Error(e.message + ' in ' + name + ': ' + JSON.stringify(repConcept)/* + "\n" + e.stack*/);
       }
       if (warnings.length > 0) {
 	alert("Warnings:\n" + warnings.join("\n"));
