@@ -51,6 +51,11 @@ th.meta.top.left {
   background-color: white;
 }
 
+span.input {
+  background-color: white;
+  font-weight: normal;
+}
+
 td.pane {
   text-align: center;
   vertical-align: middle;
@@ -157,6 +162,7 @@ var {
  <li>Add/remove extra roles in TRIPS concepts.
  <li>Search for concepts by name in TRIPS ontology or your ontology.
  <li>Load/save your ontology and mappings as JSON.
+ <li>Add a prefix to all concepts/roles in your ontology.
  <li>Display mappings between concepts that aren't visible because that part of the tree is collapsed, as if they were mappings between their nearest visible ancestors, except partially transparent.
  <li>Autocomplete concept search boxes.
  <li>Autocomplete role filler type/path boxes.
@@ -205,7 +211,7 @@ var {
 <p>The interface is divided into a grid of three sections horizontally by two sections vertically, like this:</p>
 <table>
 <tr><th rowspan="2" class="meta top left"></th><th colspan="2" class="meta top">TRIPS ontology</th><th class="meta top">mappings</th><th colspan="2" class="meta top">your ontology</th></tr>
-<tr><th colspan="3">Ontology Builder/Mapper (<a href="#">help</a>)</th><th><button>load</button> <button>save</button></th><th>concept: <button>+</button> <button>-</button></th></tr>
+<tr><th colspan="3">Ontology Builder/Mapper (<a href="#">help</a>)</th><th><button>load</button> <button>save</button> prefix: <span class="input">your prefix</span></th><th>concept: <button>+</button> <button>-</button></th></tr>
 <tr><th rowspan="2" class="meta left">trees</th><th>TRIPS ontology</th><td>search for concept</td><th>map: <button>+</button> <button>-</button></th><th>Your ontology</th><td>search for concept</td></tr>
 <tr><td colspan="2" class="pane">[TRIPS tree view]</td><td class="pane">[concept mappings]</td><td colspan="2" class="pane">[your tree view]</td></tr>
 <tr><th rowspan="2" class="meta left">details/roles</th><th colspan="2">TRIPS concept details</th><th>map: <button>+</button> <button>-</button></th><th colspan="2">Your concept details</th></tr>
@@ -249,12 +255,15 @@ var {
 
 <p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). (Safari and IE users: this might just open the file in the browser instead, so you will then have to use your browser's "save as" function, and save only the page source and not a web archive/complete webpage. IE users: upgrade to Edge. Safari users: complain to Apple and tell them to implement the <code>download</code> attribute.) Click the <button>load</button> button to the left of the <button>save</button> button to load such a file back into the page.</p>
 
+<p>If you want a prefix to be added to all the concept and role names in your ontology, enter it in the box labeled "prefix" to the right of the <button>save</button> button before saving. This is useful for adding a Lisp package to these symbols, for example entering "foo::" in this field will put all symbols in the "foo" package. The prefix won't otherwise show up in the GUI, to avoid clutter.</p>
+
 <h2>JSON Save Format</h2>
 <p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code> and <code>"fillerType"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept.</p>
 
 <code><pre>
 {
 	"ontologySaveDate": "<var>date and time that the <button>save</button> button was clicked</var>",
+	"ontologyPrefix": "<var>value you entered in the prefix field</var>",
 	"<var>your concept name</var>": {
 		"comment": "<var>comment</var>",
 		"mappings": [
