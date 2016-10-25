@@ -684,6 +684,8 @@ $(function() {
   // prevent Firefox from interfering with its own drags
   $('svg').on('dragstart', false);
 
+  $('#select-concept-mapping').selectmenu();
+
   var jsTreeConfig = {
     core: {
       animation: false,
