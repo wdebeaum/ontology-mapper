@@ -1872,7 +1872,10 @@ $(function() {
 
   /* Return a savable representation of your ontology and mappings */
   function savableRepresentation() {
-    var ret = { ontologySaveDate: new Date() }; // hope nobody makes a concept named that
+    var ret = { // hope nobody makes a concept with these names
+      ontologySaveDate: new Date(),
+      ontologyPrefix: $('#your-ontology-prefix').val()
+    };
     for (var id in yourOntById) {
       var concept = yourOntById[id];
       var mappings = concept.conceptMappings.map(function(m) {
@@ -1921,6 +1924,7 @@ $(function() {
   function loadFromSavableRepresentation(rep) {
     var warnings = [];
     // make concepts and jsTree data nodes
+    var newOntPrefix = '';
     var newOntByName = {};
     var newOntById = {};
     var treeNodesByName = {};
@@ -1937,6 +1941,10 @@ $(function() {
     }
     for (var name in rep) {
       if (name === 'ontologySaveDate') { continue; }
+      if (name === 'ontologyPrefix') {
+	newOntPrefix = rep[name];
+	continue;
+      }
       var repConcept = rep[name];
       try {
 	function warn(str) { warnings.push(str); }
@@ -2109,7 +2117,9 @@ $(function() {
     // build the jsTree data
     var newJsTreeData = [];
     for (var name in rep) {
-      if (name === 'ontologySaveDate') { continue; }
+      if (name === 'ontologySaveDate' || name === 'ontologyPrefix') {
+	continue;
+      }
       var siblings =
         (('parent' in rep[name]) ?
 	  treeNodesByName[rep[name].parent].children : newJsTreeData);
@@ -2139,6 +2149,7 @@ $(function() {
     if (selectedIDs.length == 1) {
       showTripsRoles(tripsOnt[selectedIDs[0].replace(/^ont__/, '')]);
     }
+    $('#your-ontology-prefix').val(newOntPrefix);
   }
 
   $('#save').on('click', function(evt) {
