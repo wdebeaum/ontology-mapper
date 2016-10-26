@@ -394,6 +394,125 @@ $(function() {
   }
 
   /*
+   * dragging mapping lines
+   */
+
+  // dragging state
+  var dragging = false;
+  var dragFromHandleID;
+  var dragFromSide; // 'trips' or 'your'
+  var draggedSide; // '1' or '2', opposite of above
+  var dragFromConceptOrRole; // 'concept' or 'role'
+  var draggedLine;
+
+  function endDragging() {
+    //console.log('endDragging');
+    dragging = false;
+    draggedLine = undefined;
+    $(document.body).off('mousemove mouseup');
+  }
+
+  function discardDraggedMapping() {
+    //console.log('discardDraggedMapping');
+    draggedLine.remove();
+    endDragging();
+  }
+
+  function dragPositionInSVG(evt) {
+    var svgOffset = $('#' + dragFromConceptOrRole + '-mapping').offset();
+    return {
+      x: '' + Math.floor(evt.pageX - svgOffset.left) + 'px',
+      y: '' + Math.floor(evt.pageY - svgOffset.top) + 'px'
+    };
+  }
+
+  function mouseMoveWhileDragging(evt) {
+    var pos = dragPositionInSVG(evt);
+    //console.log(pos);
+    draggedLine.attr('x' + draggedSide, pos.x);
+    draggedLine.attr('y' + draggedSide, pos.y);
+    return false;
+  }
+
+  function mouseUpWhileDragging(evt) {
+    //console.log('mouseUpWhileDragging');
+    discardDraggedMapping();
+  }
+
+  // end dragging mapping, and add mapping if valid
+  function mouseUpOnHandle(evt) {
+    //console.log('mouseUpOnHandle');
+    if (!dragging) { return false; }
+    var dragToHandleID = $(this).attr('id');
+    var handlesGID = $(this).parent().attr('id');
+    var fields = handlesGID.split(/-/);
+    dragToSide = fields[0];
+    dragToConceptOrRole = fields[1];
+    // validate drag
+    if (dragToSide === dragFromSide ||
+        dragToConceptOrRole !== dragFromConceptOrRole) {
+      console.log('invalid drag');
+      discardDraggedMapping();
+      return;
+    }
+    //console.log('valid drag');
+    draggedLine.attr(dragToSide + '-handle', dragToHandleID);
+    var tripsID = (dragFromSide === 'trips' ? dragFromHandleID : dragToHandleID).replace(/__handle$/,'');
+    var yourID = (dragToSide === 'trips' ? dragFromHandleID : dragToHandleID).replace(/__handle$/,'');
+    draggedLine.attr('id', tripsID + '__to__' + yourID);
+    // TODO? adjust line coords to be exactly at the centers of the handles?
+    // or just delete the line and let the call below add it again?
+    switch (dragFromConceptOrRole) {
+      case 'concept':
+        addConceptMapping(
+	    tripsOnt[tripsID.replace(/^ont__/,'')], yourOntById[yourID],
+	    draggedLine);
+	tripsJsTree.deselect_all();
+	tripsJsTree.select_node(tripsID);
+	yourJsTree.deselect_all();
+	yourJsTree.select_node(yourID);
+	break;
+      case 'role':
+        addRemRoleMapping('add',
+	    $('#' + tripsID), $('#' + yourID),
+	    draggedLine);
+	selectLi($('#' + tripsID)[0]);
+	selectLi($('#' + yourID)[0]);
+	break;
+      default:
+        throw new Error('WTF');
+    }
+    endDragging();
+    return false;
+  }
+
+  function mouseDownOnHandle(evt) {
+    //console.log('mouseDownOnHandle');
+    // begin dragging mapping
+    dragging = true;
+    dragFromHandleID = $(this).attr('id');
+    var handlesGID = $(this).parent().attr('id');
+    var fields = handlesGID.split(/-/);
+    dragFromSide = fields[0];
+    draggedSide = (dragFromSide === 'trips' ? '2' : '1');
+    dragFromConceptOrRole = fields[1];
+    draggedLine = $(document.createElementNS(svgNS, 'line'));
+    var pos = dragPositionInSVG(evt);
+    draggedLine.attr('x1', pos.x);
+    draggedLine.attr('y1', pos.y);
+    draggedLine.attr('x2', pos.x);
+    draggedLine.attr('y2', pos.y);
+    draggedLine.attr(dragFromSide + '-handle', dragFromHandleID);
+    $('#' + dragFromConceptOrRole + '-lines').append(draggedLine);
+    selectLi(draggedLine[0]);
+    $(document.body).on('mousemove', mouseMoveWhileDragging);
+    $(document.body).on('mouseup', mouseUpWhileDragging);
+  }
+
+  // prevent Firefox from interfering with its own drags
+  $('svg').on('dragstart', false);
+
+  /*
    * word counts
    */
 
@@ -586,127 +705,6 @@ $(function() {
   }
 
   /*
-   * dragging mapping lines
-   */
-
-  // dragging state
-  var dragging = false;
-  var dragFromHandleID;
-  var dragFromSide; // 'trips' or 'your'
-  var draggedSide; // '1' or '2', opposite of above
-  var dragFromConceptOrRole; // 'concept' or 'role'
-  var draggedLine;
-
-  function endDragging() {
-    //console.log('endDragging');
-    dragging = false;
-    draggedLine = undefined;
-    $(document.body).off('mousemove mouseup');
-  }
-
-  function discardDraggedMapping() {
-    //console.log('discardDraggedMapping');
-    draggedLine.remove();
-    endDragging();
-  }
-
-  function dragPositionInSVG(evt) {
-    var svgOffset = $('#' + dragFromConceptOrRole + '-mapping').offset();
-    return {
-      x: '' + Math.floor(evt.pageX - svgOffset.left) + 'px',
-      y: '' + Math.floor(evt.pageY - svgOffset.top) + 'px'
-    };
-  }
-
-  function mouseMoveWhileDragging(evt) {
-    var pos = dragPositionInSVG(evt);
-    //console.log(pos);
-    draggedLine.attr('x' + draggedSide, pos.x);
-    draggedLine.attr('y' + draggedSide, pos.y);
-    return false;
-  }
-
-  function mouseUpWhileDragging(evt) {
-    //console.log('mouseUpWhileDragging');
-    discardDraggedMapping();
-  }
-
-  // end dragging mapping, and add mapping if valid
-  function mouseUpOnHandle(evt) {
-    //console.log('mouseUpOnHandle');
-    if (!dragging) { return false; }
-    var dragToHandleID = $(this).attr('id');
-    var handlesGID = $(this).parent().attr('id');
-    var fields = handlesGID.split(/-/);
-    dragToSide = fields[0];
-    dragToConceptOrRole = fields[1];
-    // validate drag
-    if (dragToSide === dragFromSide ||
-        dragToConceptOrRole !== dragFromConceptOrRole) {
-      console.log('invalid drag');
-      discardDraggedMapping();
-      return;
-    }
-    //console.log('valid drag');
-    draggedLine.attr(dragToSide + '-handle', dragToHandleID);
-    var tripsID = (dragFromSide === 'trips' ? dragFromHandleID : dragToHandleID).replace(/__handle$/,'');
-    var yourID = (dragToSide === 'trips' ? dragFromHandleID : dragToHandleID).replace(/__handle$/,'');
-    draggedLine.attr('id', tripsID + '__to__' + yourID);
-    // TODO? adjust line coords to be exactly at the centers of the handles?
-    // or just delete the line and let the call below add it again?
-    switch (dragFromConceptOrRole) {
-      case 'concept':
-        addConceptMapping(
-	    tripsOnt[tripsID.replace(/^ont__/,'')], yourOntById[yourID],
-	    draggedLine);
-	tripsJsTree.deselect_all();
-	tripsJsTree.select_node(tripsID);
-	yourJsTree.deselect_all();
-	yourJsTree.select_node(yourID);
-	break;
-      case 'role':
-        addRemRoleMapping('add',
-	    $('#' + tripsID), $('#' + yourID),
-	    draggedLine);
-	selectLi($('#' + tripsID)[0]);
-	selectLi($('#' + yourID)[0]);
-	break;
-      default:
-        throw new Error('WTF');
-    }
-    endDragging();
-    return false;
-  }
-
-  function mouseDownOnHandle(evt) {
-    //console.log('mouseDownOnHandle');
-    // begin dragging mapping
-    dragging = true;
-    dragFromHandleID = $(this).attr('id');
-    var handlesGID = $(this).parent().attr('id');
-    var fields = handlesGID.split(/-/);
-    dragFromSide = fields[0];
-    draggedSide = (dragFromSide === 'trips' ? '2' : '1');
-    dragFromConceptOrRole = fields[1];
-    draggedLine = $(document.createElementNS(svgNS, 'line'));
-    var pos = dragPositionInSVG(evt);
-    draggedLine.attr('x1', pos.x);
-    draggedLine.attr('y1', pos.y);
-    draggedLine.attr('x2', pos.x);
-    draggedLine.attr('y2', pos.y);
-    draggedLine.attr(dragFromSide + '-handle', dragFromHandleID);
-    $('#' + dragFromConceptOrRole + '-lines').append(draggedLine);
-    selectLi(draggedLine[0]);
-    $(document.body).on('mousemove', mouseMoveWhileDragging);
-    $(document.body).on('mouseup', mouseUpWhileDragging);
-  }
-
-  // prevent Firefox from interfering with its own drags
-  $('svg').on('dragstart', false);
-
-  $('#select-concept-mapping').selectmenu();
-
-  /*
    * load trees
    */
 
@@ -786,25 +784,6 @@ $(function() {
 	updateMap('your', 'concept', { openClose: true });
       });
     }
-  });
-
-  /*
-   * ??? dunno why I put this here ???
-   */
-
-  $('#your-concept-search input').autocomplete({
-    minLength: 3,
-    // can't use Object.keys(yourOntByName) directly here, because it might
-    // change
-    source: function(request, response) {
-      var allNames = Object.keys(yourOntByName);
-      var matchingNames =
-        allNames.filter(function(name) {
-	  return (name.indexOf(request.term) >= 0);
-	});
-      response(matchingNames);
-    },
-    select: function(evt, ui) { yourConceptSearch(evt.target.value); }
   });
 
   /*
@@ -1248,6 +1227,8 @@ $(function() {
    * concept search
    */
 
+  // see "load trees" section for trips concept search autocomplete call
+
   function tripsConceptSearch(search) {
     console.log('searching trips ontology for concept named ' + search);
     if (search in tripsOnt) {
@@ -1262,6 +1243,21 @@ $(function() {
   $('#trips-concept-search').on('submit', function(evt) {
     evt.preventDefault();
     tripsConceptSearch($(this['search']).val());
+  });
+
+  $('#your-concept-search input').autocomplete({
+    minLength: 3,
+    // can't use Object.keys(yourOntByName) directly here, because it might
+    // change
+    source: function(request, response) {
+      var allNames = Object.keys(yourOntByName);
+      var matchingNames =
+        allNames.filter(function(name) {
+	  return (name.indexOf(request.term) >= 0);
+	});
+      response(matchingNames);
+    },
+    select: function(evt, ui) { yourConceptSearch(evt.target.value); }
   });
 
   function yourConceptSearch(search) {
@@ -1328,8 +1324,10 @@ $(function() {
   });
 
   /*
-   * add/remove concept mapping
+   * select/add/remove concept mapping
    */
+
+  $('#select-concept-mapping').selectmenu();
 
   function addConceptMapping(tripsConcept, yourConcept, line) {
     if (line === undefined) {
