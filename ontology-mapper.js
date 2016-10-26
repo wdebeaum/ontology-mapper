@@ -1,6 +1,10 @@
 $(function() {
   var DSL_DATA_PATH = 'dsl/';
 
+  /*
+   * XSL transforms for making the TRIPS tree, etc.
+   */
+
   function loadXSL(url, done) {
     var processor = null;
     if (window.XSLTProcessor) { // Gecko (Firefox), WebKit (Safari, Chrome)
@@ -62,6 +66,10 @@ $(function() {
     // return the root of the tree
     return treeNodes.root;
   }
+
+  /*
+   * managing list items
+   */
 
   /* Remove all li elements from a ul before the one with class="template", and
    * then return that one.
@@ -141,6 +149,10 @@ $(function() {
     li.addClass('selected');
     return true;
   };
+
+  /*
+   * mapping lines and handles
+   */
 
   /* Return the ID of the nearest visible ancestor of the given descendant node
    * in the given jsTree.
@@ -381,6 +393,10 @@ $(function() {
     }
   }
 
+  /*
+   * word counts
+   */
+
   /* Return a version of array that is sorted and has duplicates removed (as if
    * run through unix "| sort | uniq").
    */
@@ -569,6 +585,10 @@ $(function() {
       }, 200); // milliseconds
   }
 
+  /*
+   * dragging mapping lines
+   */
+
   // dragging state
   var dragging = false;
   var dragFromHandleID;
@@ -686,6 +706,10 @@ $(function() {
 
   $('#select-concept-mapping').selectmenu();
 
+  /*
+   * load trees
+   */
+
   var jsTreeConfig = {
     core: {
       animation: false,
@@ -764,6 +788,10 @@ $(function() {
     }
   });
 
+  /*
+   * ??? dunno why I put this here ???
+   */
+
   $('#your-concept-search input').autocomplete({
     minLength: 3,
     // can't use Object.keys(yourOntByName) directly here, because it might
@@ -778,6 +806,10 @@ $(function() {
     },
     select: function(evt, ui) { yourConceptSearch(evt.target.value); }
   });
+
+  /*
+   * TRIPS details display/inheritance
+   */
 
   /* Modify childFeats to include any parts of parentFeats that it doesn't
    * override.
@@ -1064,6 +1096,10 @@ $(function() {
     }, 0);
   });
 
+  /*
+   * your details display/inheritance
+   */
+
   function applyYourInheritance(concept, ancestor) {
     // if we're just starting, get rid of any old inherited roles/mappings
     if (ancestor === undefined) {
@@ -1146,6 +1182,10 @@ $(function() {
     updateMap('your', 'role', { openClose: true });
   });
 
+  /*
+   * handlers for days
+   */
+
   $('#trips-tree').on('after_open.jstree after_close.jstree', function(evt) {
     updateMap('trips', 'concept', { openClose: true });
     return true;
@@ -1204,6 +1244,10 @@ $(function() {
     updateMap('your',  'role',    { scroll: true, openClose: true });
   });
 
+  /*
+   * concept search
+   */
+
   function tripsConceptSearch(search) {
     console.log('searching trips ontology for concept named ' + search);
     if (search in tripsOnt) {
@@ -1236,6 +1280,10 @@ $(function() {
     evt.preventDefault();
     yourConceptSearch($(this['search']).val());
   });
+
+  /*
+   * add/remove your concept
+   */
 
   $('#rem-concept').on('click', function() {
     var treeNodes = yourJsTree.get_selected(true);
@@ -1278,6 +1326,10 @@ $(function() {
       updateMap('your', 'concept', { openClose: true });
     }, 0);
   });
+
+  /*
+   * add/remove concept mapping
+   */
 
   function addConceptMapping(tripsConcept, yourConcept, line) {
     if (line === undefined) {
@@ -1374,6 +1426,10 @@ $(function() {
     }
   }
 
+  /*
+   * add/remove role mapping
+   */
+
   $('#add-role-mapping, #rem-role-mapping').on('click', function(evt) {
     var tripsLIs = selectedLi($('#trips-roles'));
     var yourLIs = selectedLi($('#your-roles'));
@@ -1387,6 +1443,10 @@ $(function() {
       selectLi(mapping.line[0]);
     }
   });
+
+  /*
+   * add/remove everything else
+   */
 
   $('#add-trips-role, #add-your-role, #add-example, #rem-trips-role, #rem-your-role, #rem-example').on('click', function(evt) {
     var ul = evt.target.parentNode.parentNode;
@@ -1419,6 +1479,10 @@ $(function() {
       }, 0);
     }
   });
+
+  /*
+   * trips role path handlers/autocomplete
+   */
 
   function autocompleteTripsRolePath(request, response) {
     var fields =
@@ -1586,7 +1650,9 @@ $(function() {
     updateMap('trips', 'role', { openClose: true });
   }
 
-  /* trips roles onchange/rem handlers */
+  /*
+   * trips roles onchange/rem handlers
+   */
 
   window.inputTripsRoleName = function(evt) {
     var id = tripsJsTree.get_selected()[0];
@@ -1646,7 +1712,9 @@ $(function() {
     }
   }
 
-  /* your details oninput/onchange/rem handlers */
+  /*
+   * your details oninput/onchange/rem handlers
+   */
 
   $('#your-concept-name').on('change', function(evt) {
     var id = yourJsTree.get_selected()[0];
@@ -1759,6 +1827,10 @@ $(function() {
       }
     }
   }
+
+  /*
+   * loading and saving
+   */
 
   /* Return a savable representation of your ontology and mappings */
   function savableRepresentation() {
@@ -2075,6 +2147,10 @@ $(function() {
     };
     reader.readAsText(file);
   });
+
+  /*
+   * hide unfilled details until something happens
+   */
 
   $('#trips-details').hide();
   $('#your-details').hide();
