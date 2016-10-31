@@ -22,7 +22,7 @@ th {
   background-color: #ccc;
 }
 
-button {
+button, select {
   border-style: outset;
   border-width: 2px;
   border-color: #ddd;
@@ -156,33 +156,30 @@ var {
    <li>words
    <li>examples
   </ul>
- <li>Add/remove mappings between TRIPS concepts and your concepts.
- <li>Add/remove mappings between the roles of a TRIPS concept (and their fillers' roles in turn, etc.) and the roles of your concept, when the concepts are mapped.
- <li>Add/remove mappings between specific TRIPS role filler types, and the roles of your concept, when the concepts are mapped.
- <li>Add/remove extra roles in TRIPS concepts.
- <li>Search for concepts by name in TRIPS ontology or your ontology.
+ <li>Add/remove mappings and associated things:
+  <ul>
+   <li>Mappings between one or more TRIPS concepts and one of your concepts.
+   <li>Mappings between the roles of a TRIPS concept (and their fillers' roles in turn, etc.; autocompleted) and the roles of your concept, as part of a concept mapping.
+   <li>Mappings between specific TRIPS role filler types, and the roles of your concept, as part of a concept mapping.
+   <li>Use "nil" filler type in a concept mapping, to indicate TRIPS roles that must not be filled for the mapping to apply.
+   <li>Extra roles in TRIPS concepts.
+   <li>Multiple concept mappings for a given pair of concepts, with different role mappings (and associated role filler types and extra roles).
+  </ul>
+ <li>Search for concepts by name in TRIPS ontology or your ontology (with autocomplete).
  <li>Load/save your ontology and mappings as JSON.
  <li>Add a prefix to all concepts/roles in your ontology.
  <li>Display mappings between concepts that aren't visible because that part of the tree is collapsed, as if they were mappings between their nearest visible ancestors, except partially transparent.
- <li>Autocomplete concept search boxes.
- <li>Autocomplete role filler type/path boxes.
  <li>Word counts next to each concept show how many words under that concept are also under the selected concept on the other side.
- <li>Inheritance of:
-  <ul>
-   <li>Original TRIPS roles, and their restrictions
-   <!-- li>Extra TRIPS roles (WIP) -->
-   <li>TRIPS role filler types/paths (WIP)
-   <li>your roles
-   <li>role mappings (WIP)
-  </ul>
-  Inherited things are gray instead of black.
+ <li>Inheritance of original TRIPS roles and their restrictions, and of your roles (inherited things are gray instead of black).
 </ul>
 
 <h4>Planned Features</h4>
 <ul>
  <li>Display mappings between TRIPS concepts and WordNet senses in the TRIPS concept details, and use them as extra words for the word count feature.
  <li>Extend mapping lines into tree views, up to the name of the concept.
- <li>Export to/import from other formats, e.g. DSL, OWL.
+ <li>Build Lisp mapping rules for use in TRIPS.
+ <li>Color code lines for different concept mappings for the same pair of concepts.
+ <li>Add more than one TRIPS concept to a concept mapping.
 </ul>
 
 <h3>Known Bugs</h3>
@@ -190,20 +187,15 @@ var {
  <li>There are gaps on the right and bottom sides of the map panes.
  <li>Tree nodes remain selected even after they are hidden because an ancestor was collapsed.
  <li>It's possible to map roles when the corresponding concepts aren't mapped yet (maybe that should cause the concepts to be mapped, and conversely removing a concept mapping should remove the role mappings too).
- <li>Inheritance bugs:
+ <!-- li>Inheritance bugs:
   <ul>
    <li>Role mappings are only inherited on your side, not the TRIPS side.
    <li>Extra TRIPS roles aren't inherited.
    <li>Role filler types/paths are only inherited if you never showed the descendant concept's details before adding the inherited parts to the ancestor concept.
    <li>Similarly, some inherited extra TRIPS stuff may not appear inherited after a load, because it gets added after inheritance is computed.
    <li>Role filler types/paths are only inherited if they were initially defined on a non-inherited role.
-  </ul>
- <li>Load/save bugs:
-  <ul>
-   <li>Once I saw it save a file with an empty <code>"rolePath"</code> field (which it then rightly refuses to load), but I wasn't able to reproduce the problem, and I don't see how it's even possible.
-   <li>If a load fails, the program may be left in an inconsistent state, rather than the state it was in before the load was attempted. Extra things added to the TRIPS side may be deleted, even though mappings may still depend on them. Workaround: reload the page.
-   <li>If the word count feature is somehow triggered after a file load but before the UI is finished updating, it may be put into an inconsistent state.
-  </ul>
+  </ul -->
+ <li>If the word count feature is somehow triggered after a file load but before the UI is finished updating, it may be put into an inconsistent state.
 </ul>
 
 <h2>Usage</h2>
@@ -212,13 +204,15 @@ var {
 <table>
 <tr><th rowspan="2" class="meta top left"></th><th colspan="2" class="meta top">TRIPS ontology</th><th class="meta top">mappings</th><th colspan="2" class="meta top">your ontology</th></tr>
 <tr><th colspan="3">Ontology Builder/Mapper (<a href="#">help</a>)</th><th><button>load</button> <button>save</button> prefix: <span class="input">your prefix</span></th><th>concept: <button>+</button> <button>-</button></th></tr>
-<tr><th rowspan="2" class="meta left">trees</th><th>TRIPS ontology</th><td>search for concept</td><th>map: <button>+</button> <button>-</button></th><th>Your ontology</th><td>search for concept</td></tr>
+<tr><th rowspan="2" class="meta left">trees</th><th>TRIPS ontology</th><td>search for concept</td><th>map: <button>+</button> <button>-</button> <select><option>1</option></select></th><th>Your ontology</th><td>search for concept</td></tr>
 <tr><td colspan="2" class="pane">[TRIPS tree view]</td><td class="pane">[concept mappings]</td><td colspan="2" class="pane">[your tree view]</td></tr>
 <tr><th rowspan="2" class="meta left">details/roles</th><th colspan="2">TRIPS concept details</th><th>map: <button>+</button> <button>-</button></th><th colspan="2">Your concept details</th></tr>
 <tr><td colspan="2" class="pane">[TRIPS concept detail view]</td><td class="pane">[role mappings]</td><td colspan="2" class="pane">[your concept detail view]</td></tr>
 </table>
 
-<p>The <button>+</button> and <button>-</button> buttons add and remove things. The pair of buttons labeled "concept" at the top right add and remove concepts in your ontology. The pairs labeled "map" in the middle add and remove mappings between the TRIPS ontology and your ontology. The top middle pair (in the trees row) add and remove mappings between the selected <em>concepts</em>, and the bottom middle pair (in the details/roles row) add and remove mappings between the selected <em>roles</em>. Role mappings are specific to the concepts the roles are in (but see Planned Features). Mappings appear in the middle column as lines drawn between the mapped concepts/roles. Mappings between concepts hidden because that part of the tree is collapsed are drawn between their nearest visible ancestors, and are partially transparent. You can also drag between the black spots in the mappings column to add mappings.</p>
+<p>The <button>+</button> and <button>-</button> buttons add and remove things. The pair of buttons labeled "concept" at the top right add and remove concepts in your ontology. The pairs labeled "map" in the middle add and remove mappings between the TRIPS ontology and your ontology. The top middle pair (in the trees row) add and remove mappings between the selected <em>concepts</em>, and the bottom middle pair (in the details/roles row) add and remove mappings between the selected <em>roles</em>. Mappings appear in the middle column as lines drawn between the mapped concepts/roles. Mappings between concepts hidden because that part of the tree is collapsed are drawn between their nearest visible ancestors, and are partially transparent. You can also drag between the black spots in the mappings column to add mappings.</p>
+
+<p>Role mappings are specific to the currently selected concept mapping. You may make multiple concept mappings for a given pair of concepts, with different sets of role mappings. Use the selection box to the right of the concept map <button>-</button> button to switch between different concept mappings for the selected pair of concepts.</p>
 
 <p>Each side of the trees section has a search box at the top right. Enter the name of a concept to search for it in the ontology on that side. If found, its ancestors will be expanded, it will be selected, and it will scroll into view. If not, an alert will appear.</p>
 
@@ -247,18 +241,20 @@ var {
 
 <p>The optional words field enables you to easily see which concepts share words between the TRIPS ontology and your ontology. When a concept in one ontology is selected, and it has words associated with it, each concept in the other ontology displays how many of those words (if any) are associated with it, next to its node in the tree view. If the node is collapsed, the words associated with its hidden descendants are also included. Each word is counted only once, even if it is associated with multiple descendants. If you place your mouse cursor over the number, a tooltip will appear, showing you which words are shared.</p>
 
-<p>Extra roles and role filler types/paths are the only things that are editable in the TRIPS concept details. Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. Extra roles that aren't mapped aren't saved.</p>
+<p>Extra roles and role filler types/paths are the only things that are editable in the TRIPS concept details (but they are actually part of the selected concept mapping). Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. If you fail to add a mapping for an extra role before saving or selecting a different concept mapping or concept, the extra role will not be saved.</p>
 
 <p>Role filler types may be added to each TRIPS role for the purpose of mapping them to your roles. The intended meaning of such mappings is that the TRIPS role will only be mapped to your role if the term that fills it is of the given type. The type must be a TRIPS concept name.</p>
 
 <p>In the same field, you may also specify a path through roles, and optionally filler types, to the term that should be used to fill your role. Items in the path should be separated by commas and/or spaces, and role names should have a <code>:</code> prefix to distinguish them from concept names. For example, say you have a TRIPS term graph where a term of type <code>foo</code> has a role <code>:bar</code>, filled by another term of type <code>baz</code>, which in turn has a role <code>:qux</code>. And say you have mapped <code>foo</code> to your concept <code>fred</code>, but you want <code>:qux</code> to be mapped to your role <code>:glarch</code> in this situation. Then you would click the <button>+</button> under the <code>:bar</code> role in <code>foo</code>'s details, enter <code>baz :qux</code> in the box that appears, and map that new line (instead of the whole <code>:bar</code> role) to your role <code>:glarch</code> in your concept <code>fred</code>.</p>
+
+<p>The last role filler type may be <code>nil</code>. This indicates that the role must <em>not</em> be filled for the concept mapping to apply. Role paths ending with <code>nil</code> may not be mapped to one of your roles. Role paths not ending with <code>nil</code> must be mapped before saving or moving to a different concept or concept mapping, or they will not be saved (same as extra roles).</p>
 
 <p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). (Safari and IE users: this might just open the file in the browser instead, so you will then have to use your browser's "save as" function, and save only the page source and not a web archive/complete webpage. IE users: upgrade to Edge. Safari users: complain to Apple and tell them to implement the <code>download</code> attribute.) Click the <button>load</button> button to the left of the <button>save</button> button to load such a file back into the page.</p>
 
 <p>If you want a prefix to be added to all the concept and role names in your ontology, enter it in the box labeled "prefix" to the right of the <button>save</button> button before saving. This is useful for adding a Lisp package to these symbols, for example entering "foo::" in this field will put all symbols in the "foo" package. The prefix won't otherwise show up in the GUI, to avoid clutter.</p>
 
 <h2>JSON Save Format</h2>
-<p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code> and <code>"fillerType"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept.</p>
+<p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code> and <code>"fillerType"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept. Note that the first element of <code>"rolePathMappings"</code> below is an example of a normal mapped role, while the second is an example of a "nil" role filler type, which is not mapped to one of your roles.</p>
 
 <code><pre>
 {
@@ -267,26 +263,38 @@ var {
 	"<var>your concept name</var>": {
 		"comment": "<var>comment</var>",
 		"mappings": [
-			"ont::<var>trips concept name</var>",
-			<var>more trips concept names...</var>
+			{
+				"concepts": [
+					"ont::<var>trips concept name</var>",
+					<var>more trips concept names...</var>
+				],
+				"rolePathMappings": [
+					[
+						{
+							"role": "ont::<var>trips role name</var>",
+							"fillerType": "ont::<var>trips concept name</var>"
+						},
+						<var>more steps (first step is required)...</var>
+						"<var>your role name</var>"
+					],
+					[
+						{
+							"role": "ont::<var>trips role name</var>",
+							"fillerType": "ont::<var>trips concept name</var>"
+						},
+						<var>more steps...</var>
+						{
+							"role": "ont::<var>trips role name</var>",
+							"fillerType": "nil"
+						}
+					]
+					<var>more role path mappings...</var>
+				]
+			},
+			<var>more concept mappings...</var>
 		],
 		"roles": [
-			{
-				"mappings": [
-					{
-						"concept": "ont::<var>trips concept name</var>",
-						"rolePath": [
-							{
-								"role": "ont::<var>trips role name</var>",
-								"fillerType": "ont::<var>trips concept name</var>"
-							},
-							<var>more steps (first step is required)...</var>
-						]
-					},
-					<var>more mappings...</var>
-				],
-				"name": "<var>your role name</var>"
-			},
+			"<var>your role name</var>"
 			<var>more roles...</var>
 		],
 		"words": [
