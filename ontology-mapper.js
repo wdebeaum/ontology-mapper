@@ -213,17 +213,9 @@ $(function() {
     line.attr(coord, parseInt(handle.attr('cy')) - scroll);
   }
 
-  function updateMap(side, conceptOrRole, opts) {
-    if (!opts) { opts = {}; }
+  function updateHandles(side, conceptOrRole) {
     var mapWidth = $('.map')[0].offsetWidth - 4; // FIXME see CSS
     var handlesG = $('#' + side + '-' + conceptOrRole + '-handles');
-    if (opts.scroll) {
-      var scroll =
-          $('#' + side + '-' +
-		  (('concept' === conceptOrRole) ? 'tree-scroll' : 'details')
-	  ).scrollTop();
-      handlesG.attr('transform', 'translate(0, ' + (-scroll) + ')');
-    }
     // iterate over (visible) nodes
     var firstNode;
     var done;
@@ -260,27 +252,45 @@ $(function() {
       default:
         throw new Error('WTF');
     }
+    handlesG.empty();
+    for (var node = firstNode; !done(node); node = nextNode(node)) {
+      var handle = document.createElementNS(svgNS, 'circle');
+      handle.setAttribute('class', 'handle');
+      handle.setAttribute('r', '1ex');
+      handle.setAttribute('cx', ('trips' === side ? 0 : mapWidth));
+      var nodeHeight =
+	((node.firstElementChild === null) ?
+	  // no element children means it's just this row
+	  node.offsetHeight :
+	  // element children means it could have child nodes underneath, so
+	  // only take the height of the first element child
+	  node.firstElementChild.offsetHeight);
+      handle.setAttribute('cy', node.offsetTop + nodeHeight/2);
+      if (node.id) {
+	handle.setAttribute('id', node.id + '__handle');
+      }
+      handlesG.append(handle);
+      $(handle).on('mousedown', mouseDownOnHandle);
+      $(handle).on('mouseup', mouseUpOnHandle);
+    }
+  }
+
+  function updateMap(side, conceptOrRole, opts) {
+    if (!opts) { opts = {}; }
+    if (opts.scroll) {
+      var handlesG = $('#' + side + '-' + conceptOrRole + '-handles');
+      var scroll =
+          $('#' + side + '-' +
+		  (('concept' === conceptOrRole) ? 'tree-scroll' : 'details')
+	  ).scrollTop();
+      handlesG.attr('transform', 'translate(0, ' + (-scroll) + ')');
+    }
     if (opts.openClose) {
-      handlesG.empty();
-      for (var node = firstNode; !done(node); node = nextNode(node)) {
-	var handle = document.createElementNS(svgNS, 'circle');
-	handle.setAttribute('class', 'handle');
-	handle.setAttribute('r', '1ex');
-	handle.setAttribute('cx', ('trips' === side ? 0 : mapWidth));
-	var nodeHeight =
-	  ((node.firstElementChild === null) ?
-	    // no element children means it's just this row
-	    node.offsetHeight :
-	    // element children means it could have child nodes underneath, so
-	    // only take the height of the first element child
-	    node.firstElementChild.offsetHeight);
-	handle.setAttribute('cy', node.offsetTop + nodeHeight/2);
-	if (node.id) {
-	  handle.setAttribute('id', node.id + '__handle');
-	}
-	handlesG.append(handle);
-	$(handle).on('mousedown', mouseDownOnHandle);
-	$(handle).on('mouseup', mouseUpOnHandle);
+      if (opts.bothSidesHandles) {
+	updateHandles('trips', conceptOrRole);
+	updateHandles('your', conceptOrRole);
+      } else {
+	updateHandles(side, conceptOrRole);
       }
     }
     var linesG = $('#' + conceptOrRole + '-lines');
@@ -357,38 +367,40 @@ $(function() {
 	    var yourConcept = yourOntById[yourID];
 	    var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept);
 	    if (conceptMapping !== undefined) {
-	      conceptLine = $(tripsID + '__to__' + yourID);
+	      conceptLine = $('#' + tripsID + '__to__' + yourID);
 	      selectLi(conceptLine);
-	    }
-	    conceptMapping.roleMappings.forEach(function(m) {
-	      var tripsRoleIndex =
-	        tripsConcept.dynamic_sem_frame.findIndex(function(tripsRole) {
-		  return tripsRole.roles.includes(m.tripsRole.roles[0]);
-		});
-	      var yourRoleIndex =
-		yourConcept.roles.findIndex(function(r) {
-		  return r.name === m.yourRole.name;
-		});
-	      var tripsRoleID = 'trips-role-' + tripsRoleIndex;
-	      if (m.tripsRolePath) {
-		var tripsRolePathIndex =
-		  m.tripsRole.paths.findIndex(function(path) {
-		    return path.every(function(rStep, i) {
-		      mStep = m.tripsRolePath[i];
-		      return (mStep.role === rStep.role &&
-			      mStep.fillerType === rStep.fillerType);
-		    });
+	      conceptMapping.roleMappings.forEach(function(m) {
+		var tripsRoleIndex =
+		  tripsConcept.dynamic_sem_frame.findIndex(function(tripsRole) {
+		    return tripsRole.roles.includes(m.tripsRole.roles[0]);
 		  });
-		tripsRoleID = 'path-' + tripsRolePathIndex + '-of-' + tripsRoleID;
-	      }
-	      if (yourRoleIndex >= 0) {
-		var yourRoleID = 'your-role-' + yourRoleIndex;
-		m.line = addLine(linesG, tripsRoleID, yourRoleID);
-	      }
-	      /*if (m.yourConcept !== yourConcept) {
-		m.line.addClass('inherited');
-	      }*/
-	    });
+		var yourRoleIndex =
+		  (('yourRole' in m) ?
+		    yourConcept.roles.findIndex(function(r) {
+		      return r.name === m.yourRole.name;
+		    })
+		    : -1);
+		var tripsRoleID = 'trips-role-' + tripsRoleIndex;
+		if (m.tripsRolePath) {
+		  var tripsRolePathIndex =
+		    m.tripsRole.paths.findIndex(function(path) {
+		      return path.every(function(rStep, i) {
+			mStep = m.tripsRolePath[i];
+			return (mStep.role === rStep.role &&
+				mStep.fillerType === rStep.fillerType);
+		      });
+		    });
+		  tripsRoleID = 'path-' + tripsRolePathIndex + '-of-' + tripsRoleID;
+		}
+		if (yourRoleIndex >= 0) {
+		  var yourRoleID = 'your-role-' + yourRoleIndex;
+		  m.line = addLine(linesG, tripsRoleID, yourRoleID);
+		}
+		/*if (m.yourConcept !== yourConcept) {
+		  m.line.addClass('inherited');
+		}*/
+	      });
+	    }
 	  }
 	  if (conceptLine === undefined) {
 	    deselectAllLis($('#concept-lines'));
@@ -473,26 +485,29 @@ $(function() {
     //draggedLine.attr('id', tripsID + '__to__' + yourID);
     //// TODO? adjust line coords to be exactly at the centers of the handles?
     //// or just delete the line and let the call below add it again?
+    draggedLine.remove();
     switch (dragFromConceptOrRole) {
       case 'concept':
 	tripsJsTree.deselect_all();
 	tripsJsTree.select_node(tripsID);
 	yourJsTree.deselect_all();
 	yourJsTree.select_node(yourID);
-        addConceptMapping(
+	addConceptMapping(
 	    tripsOnt[tripsID.replace(/^ont__/,'')], yourOntById[yourID] /*,
 	    draggedLine*/);
 	break;
       case 'role':
 	selectLi($('#' + tripsID)[0]);
 	selectLi($('#' + yourID)[0]);
-        addRemRoleMapping('add',
+	addRemRoleMapping('add',
 	    $('#' + tripsID), $('#' + yourID) /*,
 	    draggedLine*/);
 	break;
       default:
         throw new Error('WTF');
     }
+    // select the new added (not dragged) line
+    selectLi($('#' + tripsID + '__to__' + yourID)[0]);
     endDragging();
     return false;
   }
@@ -966,6 +981,9 @@ $(function() {
   }
 
   function addRolesAndPathsFromSelectedMapping(concept) {
+    concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
+      roleRestrMap.paths = [];
+    });
     var yourIDs = yourJsTree.get_selected();
     if (yourIDs.length == 1) {
       var yourID = yourIDs[0];
@@ -980,7 +998,7 @@ $(function() {
 	    var tripsRole =
 	      concept.dynamic_sem_frame.
 	      find(function(roleRestrMap) {
-		return roleRestrMap.roles.include(roleName);
+		return roleRestrMap.roles.includes(roleName);
 	      });
 	    if (tripsRole === undefined) {
 	      // TODO check for this case earlier so it never happens here, and
@@ -1227,7 +1245,20 @@ $(function() {
       clearUlUpToTemplate($('#your-roles')); // so we don't re-add handles
       $('#your-details').hide();
     }
-    updateMap('your', 'role', { openClose: true });
+    // re-show trips roles and remember to update both sides' handles, if
+    // there's exactly one trips concept selected, in case there are extra
+    // roles or paths that need to be added/removed because we selected a
+    // different/no your concept, and thus a different concept mapping
+    var bothSidesHandles = false;
+    var tripsIDs = tripsJsTree.get_selected();
+    if (tripsIDs.length == 1) {
+      showTripsRoles(tripsOnt[tripsIDs[0].replace(/^ont__/, '')]);
+      bothSidesHandles = true;
+    }
+    updateMap('your', 'role', {
+      openClose: true,
+      bothSidesHandles: bothSidesHandles
+    });
   });
 
   /*
@@ -1414,7 +1445,7 @@ $(function() {
       // fill scm with as many options as there are applicable concept mappings
       var i = 0;
       yourConcept.conceptMappings.forEach(function(cm) {
-	if (cm.tripsConcepts.include(tripsConcept)) {
+	if (cm.tripsConcepts.includes(tripsConcept)) {
 	  scm.append('<option>' + (++i) + '</option>');
 	}
       });
@@ -1448,7 +1479,7 @@ $(function() {
     var conceptMapping;
     for (var i = 0, j = 0; i < yourConcept.conceptMappings.length; i++) {
       var m = yourConcept.conceptMappings[i];
-      if (m.tripsConcepts.include(tripsConcept)) {
+      if (m.tripsConcepts.includes(tripsConcept)) {
 	if (j === conceptMappingIndex) {
 	  conceptMapping = m;
 	  break;
@@ -1461,6 +1492,7 @@ $(function() {
 	throw new Error('Expected a concept mapping to be selected, but none is');
       } else if (onMissing === 'add') {
 	conceptMapping = addConceptMapping(tripsConcept, yourConcept);
+	selectLi($('#ont__' + tripsConcept.name + '__to__' + yourConcept.id));
       }
     }
     return conceptMapping;
@@ -1471,7 +1503,7 @@ $(function() {
     /* wait, what was wrong with this again?*/
     var line;
     for (var i = 0; i < yourConcept.conceptMappings.length; i++) {
-      var m = yourConcept.conceptMappings;
+      var m = yourConcept.conceptMappings[i];
       var j = m.tripsConcepts.indexOf(tripsConcept);
       if (j > -1) {
 	line = m.lines[j];
@@ -1481,8 +1513,8 @@ $(function() {
     /*// FIXME this might not be === what was originally returned from addLine
     var line = $('#ont__' + tripsConcept.name + '__to__' + yourConcept.id);*/
     // otherwise make one
-    //if (line === undefined) {
-    if (line.length == 0) {
+    if (line === undefined) {
+    //if (line.length == 0) {
       line = addLine($('#concept-lines'), 'ont__' + tripsConcept.name, yourConcept.id);
     }
     // also add option
@@ -1514,7 +1546,7 @@ $(function() {
     // remove each line if we're not still using it
     mapping.lines.forEach(function(line) {
       if (!yourConcept.conceptMappings.some(function(m) {
-	     return m.lines.include(line);
+	     return m.lines.includes(line);
 	   })) {
 	line.remove();
       }
@@ -1542,7 +1574,7 @@ $(function() {
     var yourConcept = yourOntById[yourID];
     if (/^add-/.test(this.id)) {
       var mapping = addConceptMapping(tripsConcept, yourConcept);
-      selectLi(mapping.line[0]);
+      selectLi(mapping.lines[0]);
     } else {
       remConceptMapping(tripsConcept, yourConcept);
     }
@@ -1976,7 +2008,7 @@ $(function() {
       conceptMapping.roleMappings =
         conceptMapping.roleMappings.filter(function(m) {
 	  if (role === m.tripsRole ||
-	      role.roles.include(m.tripsRole.roles[0])) {
+	      role.roles.includes(m.tripsRole.roles[0])) {
 	    if (m.line !== undefined) { m.line.remove(); }
 	    return false;
 	  } else {
@@ -2129,7 +2161,7 @@ $(function() {
       var mappings = concept.conceptMappings.map(function(m) {
 	return {
 	  concepts: m.tripsConcepts.map(function(tc) {
-	    return 'ont::' + m.tripsConcept.name;
+	    return 'ont::' + tc.name;
 	  }),
 	  rolePathMappings: m.roleMappings.map(function(rm) {
 	    var tripsRolePath = (rm.tripsRolePath || [{}])
@@ -2284,8 +2316,14 @@ $(function() {
 		      continue; // prevents us from using forEach :(
 		    }
 		  }*/
+		  tripsRoleName = tripsRoleName.replace(/^ont::/, '');
+		  if (!isTripsRoleName(tripsRoleName)) {
+		    warn('your concept ' + name + "'s role " + r.name + ' has a mapping to a non-existent trips role ' + tripsRoleName + '; role mapping deleted');
+		    continue; // prevents us from using forEach :(
+		  }
 		  var tripsRole = {
 		     roles: [tripsRoleName],
+		     paths: [],
 		     optional: true,
 		     added: true // may change to inherited later
 		  };
@@ -2341,7 +2379,8 @@ $(function() {
 		      tripsRole.paths.push(newPath);
 		      path = newPath;
 		    }*/
-		    newMapping.tripsRolePath = path;
+		    newMapping.tripsRolePath = newPath;
+		    tripsRole.paths.push(newPath);
 		  }
 		  roleMappings.push(newMapping);
 		  //tripsConcept.roleMappings.push(newMapping);
@@ -2445,6 +2484,7 @@ $(function() {
 		}
 		var tripsRole = {
 		  roles: [tripsRoleName],
+		  paths: [],
 		  optional: true
 		}
 		// add .inherited=true or .added=true, depending on whether all
@@ -2452,7 +2492,7 @@ $(function() {
 		if (conceptMapping.tripsConcepts.every(function(c) {
 		      return c.dynamic_sem_frame.some(function(roleRestrMap) {
 			return ((!roleRestrMap.added) &&
-				roleRestrMap.roles.include(tripsRoleName));
+				roleRestrMap.roles.includes(tripsRoleName));
 		      });
 		    })) {
 		  tripsRole.inherited = true;
@@ -2511,6 +2551,7 @@ $(function() {
 		conceptMapping.roleMappings.push(roleMapping);
 	      }
 	      // });
+	      conceptMappings.push(conceptMapping);
 	      break;
 	    default:
 	      fail('expected concept mapping to be either a string starting with ont:: or an object');
