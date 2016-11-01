@@ -367,6 +367,9 @@ $(function() {
 	    var yourConcept = yourOntById[yourID];
 	    var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept);
 	    if (conceptMapping !== undefined) {
+	      var conceptMappingIndex =
+	        $('#select-concept-mapping')[0].selectedIndex;
+	      var lineClass = 'from-concept-mapping-' + conceptMappingIndex;
 	      conceptLine = $('#' + tripsID + '__to__' + yourID);
 	      selectLi(conceptLine);
 	      conceptMapping.roleMappings.forEach(function(m) {
@@ -395,6 +398,7 @@ $(function() {
 		if (yourRoleIndex >= 0) {
 		  var yourRoleID = 'your-role-' + yourRoleIndex;
 		  m.line = addLine(linesG, tripsRoleID, yourRoleID);
+		  m.line.addClass(lineClass);
 		}
 	      });
 	    }
@@ -1482,7 +1486,6 @@ $(function() {
     var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept, 'error');
     var i =
       yourConcept.conceptMappings.findIndex(function(m) {
-	//return m.tripsConcepts.includes(tripsConcept);
 	return m === conceptMapping;
       });
     if (i < 0) { throw new Error('WTF'); }
@@ -1596,7 +1599,7 @@ $(function() {
    * add/remove role mapping
    */
 
-  function addRemRoleMapping(addOrRem, tripsLIs, yourLIs, line) {
+  function addRemRoleMapping(addOrRem, tripsLIs, yourLIs) {
     var tripsConceptID = tripsJsTree.get_selected()[0];
     var tripsConcept = tripsOnt[tripsConceptID.replace(/^ont__/,'')];
     var tripsRole;
@@ -1623,9 +1626,9 @@ $(function() {
     var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept, 'add');
     switch (addOrRem) {
       case 'add':
-        if (line === undefined) {
-	  line = addLine($('#role-lines'), tripsLIs[0].id, yourLIs[0].id);
-	}
+	var line = addLine($('#role-lines'), tripsLIs[0].id, yourLIs[0].id);
+	var conceptMappingIndex = $('#select-concept-mapping')[0].selectedIndex;
+	line.addClass('from-concept-mapping-' + conceptMappingIndex);
 	var mapping = {
 	  tripsConcepts: conceptMapping.tripsConcepts,
 	  tripsRole: tripsRole,
@@ -2617,4 +2620,59 @@ $(function() {
 
   $('#trips-details').hide();
   $('#your-details').hide();
+
+  /*
+   * add color coding CSS rules
+   */
+
+  // Levels of RGB in colors that should be easy to distinguish from each other
+  // (and from other colors used in the interface), especially the first few.
+  // Deliberately omitted colors:
+  // light cyan - for selections
+  // black - for non-color-coded stuff
+  // grey - for inherited stuff
+  // white - for background
+  // and a few others hard to distinguish from each other, or hard to see on a
+  // white background
+  var colorScheme = [
+    [0, 0, 1], // single component dark
+    [0, 1, 0],
+    [1, 0, 0],
+    [0, 1, 1], // two component dark
+    [1, 0, 1],
+    [1, 1, 0],
+    [0, 0, 2], // single component bright
+    [0, 2, 0],
+    [2, 0, 0],
+    [1, 0, 2], // two components, one bright
+    [2, 1, 0],
+    [2, 0, 2], // two components, both bright (magenta)
+    [1, 2, 1], // all three components, one bright
+    [2, 1, 1],
+    [2, 1, 2]
+  ];
+  var colorLevels = [0, 159, 255]; // log-ish scale
+  var colorStyle = $('<style type="text/css">');
+  colorStyle.append(
+    // foreground of selected menu item
+    "#select-concept-mapping-menu li.ui-menu-item div.ui-state-active { color: white !important; }\n"
+  );
+  colorScheme.forEach(function(rgbProps, i) {
+    var red   = colorLevels[rgbProps[0]];
+    var green = colorLevels[rgbProps[1]];
+    var blue  = colorLevels[rgbProps[2]];
+    var color = 'rgb(' + [red,green,blue].join(',') + ')';
+    colorStyle.append(
+      // foreground of non-selected menu item
+      '#select-concept-mapping-menu li.ui-menu-item:nth-child(' + (i+1) +
+        ') div { color: ' + color + "; }\n" +
+      // background of selected menu item
+      '#select-concept-mapping-menu li.ui-menu-item:nth-child(' + (i+1) +
+        ') div.ui-state-active { background-color: ' + color + "; }\n" +
+      // role mapping line
+      '#role-lines line.from-concept-mapping-' + i +
+      ' { stroke: ' + color + "; }\n"
+    );
+  });
+  $(document.head).append(colorStyle);
 });
