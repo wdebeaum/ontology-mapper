@@ -365,7 +365,7 @@ $(function() {
 	    var yourID = yourIDs[0];
 	    var tripsConcept = tripsOnt[tripsID.replace(/^ont__/,'')];
 	    var yourConcept = yourOntById[yourID];
-	    var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept);
+/*	    var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept);
 	    if (conceptMapping !== undefined) {
 	      var conceptMappingIndex =
 	        $('#select-concept-mapping')[0].selectedIndex;
@@ -401,7 +401,53 @@ $(function() {
 		  m.line.addClass(lineClass);
 		}
 	      });
-	    }
+	    }*/
+	    var conceptMappingIndex = 0;
+	    yourConcept.conceptMappings.forEach(function(conceptMapping) {
+	      if (conceptMapping.tripsConcepts.includes(tripsConcept)) {
+		var lineClass = 'from-concept-mapping-' + conceptMappingIndex;
+		conceptMappingIndex++;
+		conceptLine = $('#' + tripsID + '__to__' + yourID);
+		selectLi(conceptLine);
+		conceptMapping.roleMappings.forEach(function(m) {
+		  var tripsRoleIndex =
+		    tripsConcept.dynamic_sem_frame.
+		    findIndex(function(tripsRole) {
+		      return tripsRole.roles.includes(m.tripsRole.roles[0]);
+		    });
+		  if (tripsRoleIndex < 0) { // FIXME
+		    return; // break
+		  }
+		  var yourRoleIndex =
+		    (('yourRole' in m) ?
+		      yourConcept.roles.findIndex(function(r) {
+			return r.name === m.yourRole.name;
+		      })
+		      : -1);
+		  var tripsRoleID = 'trips-role-' + tripsRoleIndex;
+		  if (m.tripsRolePath) {
+		    var tripsRolePathIndex =
+		      m.tripsRole.paths.findIndex(function(path) {
+			return path.every(function(rStep, i) {
+			  mStep = m.tripsRolePath[i];
+			  return (mStep.role === rStep.role &&
+				  mStep.fillerType === rStep.fillerType);
+			});
+		      });
+		    if (tripsRolePathIndex < 0) { // FIXME
+		      return; // break
+		    }
+		    tripsRoleID =
+		      'path-' + tripsRolePathIndex + '-of-' + tripsRoleID;
+		  }
+		  if (yourRoleIndex >= 0) {
+		    var yourRoleID = 'your-role-' + yourRoleIndex;
+		    m.line = addLine(linesG, tripsRoleID, yourRoleID);
+		    m.line.addClass(lineClass);
+		  }
+		});
+	      }
+	    });
 	  }
 	  if (conceptLine === undefined) {
 	    deselectAllLis($('#concept-lines'));
