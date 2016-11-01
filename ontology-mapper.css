@@ -55,6 +55,11 @@ h1, h2, h3 {
   padding-left: 1.5em;
 }
 
+#other-mapped-trips-concepts {
+  width: calc(100% - 2em) !important;
+  margin-left: 1em;
+}
+
 div.word-counts {
   display: inline-block;
   vertical-align: top;

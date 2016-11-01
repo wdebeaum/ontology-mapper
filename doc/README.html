@@ -179,7 +179,6 @@ var {
  <li>Extend mapping lines into tree views, up to the name of the concept.
  <li>Build Lisp mapping rules for use in TRIPS.
  <li>Color code lines for different concept mappings for the same pair of concepts.
- <li>Add more than one TRIPS concept to a concept mapping.
 </ul>
 
 <h3>Known Bugs</h3>
@@ -232,7 +231,11 @@ var {
 
 <p>The optional words field enables you to easily see which concepts share words between the TRIPS ontology and your ontology. When a concept in one ontology is selected, and it has words associated with it, each concept in the other ontology displays how many of those words (if any) are associated with it, next to its node in the tree view. If the node is collapsed, the words associated with its hidden descendants are also included. Each word is counted only once, even if it is associated with multiple descendants. If you place your mouse cursor over the number, a tooltip will appear, showing you which words are shared.</p>
 
-<p>Extra roles and role filler types/paths are the only things that are editable in the TRIPS concept details (but they are actually part of the selected concept mapping). Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. If you fail to add a mapping for an extra role before saving or selecting a different concept mapping or concept, the extra role will not be saved.</p>
+<p>There are three things that are editable in the TRIPS concept details, but they are actually part of the selected concept mapping. They are: other mapped TRIPS concepts, extra roles, and role filler types/paths.</p>
+
+<p>If you add a (comma and/or space separated) list of other TRIPS concept names in the "other mapped TRIPS concepts" field, and you have a concept mapping selected, those other concepts will also be mapped using the same concept mapping to the same concept in your ontology. If you enter something in this field before the concept mapping is created, it will not be saved.</p>
+
+<p>Any role in TRIPS may be added to a TRIPS concept for the purpose of mapping it to a role in your concept. If you fail to add a mapping for an extra role before saving or selecting a different concept mapping or concept, the extra role will not be saved.</p>
 
 <p>Role filler types may be added to each TRIPS role for the purpose of mapping them to your roles. The intended meaning of such mappings is that the TRIPS role will only be mapped to your role if the term that fills it is of the given type. The type must be a TRIPS concept name.</p>
 

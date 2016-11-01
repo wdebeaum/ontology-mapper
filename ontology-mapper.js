@@ -406,6 +406,25 @@ $(function() {
 	default:
 	  throw new Error('WTF');
       }
+      // if there is a concept mapping selected, also show other mapped TRIPS
+      // concepts with selected mapping lines
+      // FIXME this is a little redundant with some code in the 'role' case
+      // above
+      var tripsIDs = tripsJsTree.get_selected();
+      var yourIDs = yourJsTree.get_selected();
+      var conceptLine;
+      if (tripsIDs.length == 1 && yourIDs.length == 1) {
+	var tripsID = tripsIDs[0];
+	var yourID = yourIDs[0];
+	var tripsConcept = tripsOnt[tripsID.replace(/^ont__/,'')];
+	var yourConcept = yourOntById[yourID];
+	var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept);
+	if (conceptMapping !== undefined) {
+	  conceptMapping.tripsConcepts.forEach(function(tc) {
+	    $('#ont__' + tc.name + '__to__' + yourID).addClass('selected');
+	  });
+	}
+      }
     } else if (opts.scroll) {
       linesG.children().each(function(i, line) {
 	scrollLine(side, ('concept' === conceptOrRole ? 'tree' : 'details'), $(line));
@@ -1015,9 +1034,28 @@ $(function() {
     return roleNames + optionality + restriction;
   }
 
+  function showOtherMappedTripsConcepts(tripsConcept) {
+    var yourIDs = yourJsTree.get_selected();
+    var val = '';
+    if (yourIDs.length == 1) {
+      var yourID = yourIDs[0];
+      var yourConcept = yourOntById[yourID];
+      var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept);
+      if (conceptMapping !== undefined) {
+	val =
+	  conceptMapping.tripsConcepts.
+	  filter(function(tc) { return tc !== tripsConcept; }).
+	  map(function(tc) { return tc.name; }).
+	  join(' ');
+      }
+    }
+    $('#other-mapped-trips-concepts').val(val);
+  }
+
   function showTripsRoles(concept) {
     applyTripsInheritance(concept);
     addRolesAndPathsFromSelectedMapping(concept);
+    showOtherMappedTripsConcepts(concept); // not roles, but whatever
     var sem_feats = concept.dynamic_sem_feats;
     var sem_frame = concept.dynamic_sem_frame;
     // TODO sem_feats?
@@ -1408,7 +1446,7 @@ $(function() {
     return conceptMapping;
   }
 
-  function addConceptMapping(tripsConcept, yourConcept /*, line*/) {
+  function addConceptMapping(tripsConcept, yourConcept) {
     // get the line from an existing mapping if possible
     var line;
     for (var i = 0; i < yourConcept.conceptMappings.length; i++) {
@@ -1483,6 +1521,74 @@ $(function() {
       selectLi(mapping.lines[0]);
     } else {
       remConceptMapping(tripsConcept, yourConcept);
+    }
+  });
+
+  function updateMappedTripsConcepts() {
+    var tripsIDs = tripsJsTree.get_selected();
+    var yourIDs = yourJsTree.get_selected();
+    if (tripsIDs.length == 1 && yourIDs.length == 1) {
+      var tripsConcept = tripsOnt[tripsIDs[0].replace(/^ont__/,'')];
+      var yourConcept = yourOntById[yourIDs[0]];
+      var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept);
+      if (conceptMapping !== undefined) {
+	var input = $('#other-mapped-trips-concepts');
+	var names =
+	  input.val().toLowerCase().replace(/^[,\s]+/,'').split(/[,\s]+/);
+	var newNames = [];
+	var warnings = [];
+	conceptMapping.tripsConcepts = [tripsConcept];
+	if (names.length == 1 && names[0] === '') { names.pop(); }
+	names.forEach(function(name) {
+	  if (name in tripsOnt) {
+	    if (name === tripsConcept.name) {
+	      warnings.push(
+	        name + ' is the name of the TRIPS concept you have selected;' +
+		' no need to put it in "other mapped TRIPS concepts".');
+	    } else {
+	      newNames.push(name);
+	      conceptMapping.tripsConcepts.push(tripsOnt[name]);
+	    }
+	  } else {
+	    warnings.push(
+	      'There is no TRIPS concept named ' + name + '; removed.');
+	  }
+	});
+	if (warnings.length > 0) {
+	  alert(warnings.join("\n"));
+	  input.val(newNames.join(' '));
+	}
+	updateMap('trips', 'concept', { openClose: true });
+      }
+    }
+  }
+
+  $('#other-mapped-trips-concepts').on('change', updateMappedTripsConcepts);
+
+  $('#other-mapped-trips-concepts').autocomplete({
+    select: updateMappedTripsConcepts,
+    source: function(request, response) {
+      var fields =
+	request.term.toLowerCase().replace(/^[,\s]+/,'').split(/[,\s]+/);
+      var butLast = fields.slice(0,fields.length-1).join(' ');
+      if (butLast !== '') {
+	butLast += ' ';
+      }
+      var lastPrefix = fields[fields.length-1];
+      var data = [];
+      if (lastPrefix.length >= 3) {
+	for (var name in tripsOnt) {
+	  if ((!tripsJsTree.is_selected('ont__' + name)) &&
+	      name.length >= lastPrefix.length &&
+	      name.substr(0, lastPrefix.length) === lastPrefix) {
+	    data.push({
+	      label: name,
+	      value: butLast + name
+	    });
+	  }
+	}
+      }
+      response(data);
     }
   });
 
@@ -1650,7 +1756,7 @@ $(function() {
       });
     }
     if (includeConcepts) {
-      Object.keys(tripsOnt).forEach(function(name) {
+      for (var name in tripsOnt) {
 	if (name.length >= lastPrefix.length &&
 	    name.substr(0, lastPrefix.length) === lastPrefix) {
 	  data.push({
@@ -1658,7 +1764,7 @@ $(function() {
 	    value: butLast + name
 	  });
 	}
-      });
+      }
       // NOTE: 'nil' is also a valid choice for a final "concept".
       // We can use a simplified check here because we only autocomplete
       // concepts if lastPrefix is at least 3 chars, and 'nil' is exactly 3
@@ -1733,7 +1839,7 @@ $(function() {
       });
       var yourIDs = yourJsTree.get_selected();
       if (yourIDs.length != 1) {
-	throw new Error('no your concept selected, cannot save role path');
+	throw 'No your concept selected, cannot save role path';
       }
       var yourConcept = yourOntById[yourIDs[0]];
       var conceptMapping = selectedConceptMapping(concept, yourConcept, 'error');
