@@ -1,5 +1,7 @@
 $(function() {
   var DSL_DATA_PATH = 'dsl/';
+  var COLONS_OR_UNDERSCORE = '::'; // for original URCS files
+  //var COLONS_OR_UNDERSCORE = '_'; // for flaming-tyrion files
 
   /*
    * XSL transforms for making the TRIPS tree, etc.
@@ -730,7 +732,7 @@ $(function() {
       wordsAlreadyLookedUp[word] = true;
       $.ajax({
 	url: DSL_DATA_PATH + '../data/' +
-	     encodeURIComponent('W::' + word.replace(/\s+/, '_') + '.xml'),
+	     encodeURIComponent('W' + COLONS_OR_UNDERSCORE + word.replace(/\s+/, '_') + '.xml'),
 	dataType: 'xml'
       // on success, make sure each TRIPS concept named $name from <CLASS
       // onttype="$name"> has its senses loaded, and then continue looking up
@@ -1033,7 +1035,7 @@ $(function() {
     if ('senses' in concept) {
       done();
     } else {
-      $.ajax(DSL_DATA_PATH + encodeURIComponent('ONT::' + conceptName + '.xml'), { dataType: 'xml' }).
+      $.ajax(DSL_DATA_PATH + encodeURIComponent('ONT' + COLONS_OR_UNDERSCORE + conceptName + '.xml'), { dataType: 'xml' }).
 	done(function(conceptDSL) {
 	  concept.senses = xslTransformAndEval(dslToJSON, conceptDSL);
 	  done();
