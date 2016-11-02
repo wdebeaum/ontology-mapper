@@ -47,6 +47,11 @@ public class ReadOntologyMapperSaveFile {
 	// not a concept name
 	if (key.equals("ontologySaveDate")) { continue; }
 	System.out.println(key); // your concept name
+	if (key.equals("ontologyPrefix")) {
+	  String prefix = (String)entry.getValue();
+	  System.out.println(prefix);
+	  continue;
+	}
 	JSONObject concept = (JSONObject)entry.getValue();
 	// parent is optional; top-level concepts have no parent
 	if (concept.containsKey("parent")) {
@@ -54,41 +59,49 @@ public class ReadOntologyMapperSaveFile {
 	  System.out.println(parent);
 	}
 	JSONArray conceptMappings = (JSONArray)concept.get("mappings");
-	for (Object mappingObject : conceptMappings) {
-	  String mapping = (String)mappingObject;
-	  System.out.println(mapping);
-	}
-	JSONArray roles = (JSONArray)concept.get("roles");
-	for (Object roleObject : roles) {
-	  JSONObject role = (JSONObject)roleObject;
-	  String roleName = (String)role.get("name");
-	  System.out.println(roleName);
-	  JSONArray roleMappings = (JSONArray)role.get("mappings");
-	  for (Object mappingObject : roleMappings) {
-	    JSONObject mapping = (JSONObject)mappingObject;
-	    String topTripsConceptName = (String)mapping.get("concept");
-	    System.out.println(topTripsConceptName);
-	    JSONArray rolePath = (JSONArray)mapping.get("rolePath");
-	    for (Object stepObject : rolePath) {
-	      JSONObject step = (JSONObject)stepObject;
-	      String tripsRoleName = (String)step.get("role");
-	      System.out.println(tripsRoleName);
-	      // fillerType is optional
-	      if (step.containsKey("fillerType")) {
-		String fillerType = (String)step.get("fillerType");
-		System.out.println(fillerType);
+	for (Object conceptMappingObject : conceptMappings) {
+	  JSONObject conceptMapping = (JSONObject)conceptMappingObject;
+	  JSONArray tripsConcepts = (JSONArray)conceptMapping.get("concepts");
+	  for (Object tripsConceptObject : tripsConcepts) {
+	    String tripsConcept = (String)tripsConceptObject;
+	    System.out.println(tripsConcept);
+	  }
+	  JSONArray rolePathMappings = (JSONArray)conceptMapping.get("rolePathMappings");
+	  for (Object pathObject : rolePathMappings) {
+	    JSONArray path = (JSONArray)pathObject;
+	    for (Object stepObject : path) {
+	      if (stepObject instanceof JSONObject) {
+		JSONObject step = (JSONObject)stepObject;
+		String tripsRoleName = (String)step.get("role");
+		System.out.println(tripsRoleName);
+		// fillerType is optional
+		if (step.containsKey("fillerType")) {
+		  String fillerType = (String)step.get("fillerType");
+		  System.out.println(fillerType);
+		}
+	      } else {
+		String role = (String)stepObject;
+		System.out.println(role);
 	      }
 	    }
 	  }
 	}
+	JSONArray roles = (JSONArray)concept.get("roles");
+	for (Object roleObject : roles) {
+	  String role = (String)roleObject;
+	  System.out.println(role);
+	}
 	// ignoring keys "comment", "words", "examples", since I'm guessing you're not so interested in those
       }
     } catch (IOException e) {
-      System.err.println("Error reading stdin: " + e);
+      System.err.println("Error reading stdin:");
+      e.printStackTrace();
     } catch (ParseException e) {
-      System.err.println("Error parsing JSON: " + e);
+      System.err.println("Error parsing JSON:");
+      e.printStackTrace();
     } catch (ClassCastException e) {
-      System.err.println("Error interpreting JSON: " + e);
+      System.err.println("Error interpreting JSON:");
+      e.printStackTrace();
     }
   }
 }
