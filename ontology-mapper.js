@@ -256,10 +256,10 @@ $(function() {
     }
     handlesG.empty();
     for (var node = firstNode; !done(node); node = nextNode(node)) {
-      var handle = document.createElementNS(svgNS, 'circle');
-      handle.setAttribute('class', 'handle');
-      handle.setAttribute('r', '1ex');
-      handle.setAttribute('cx', ('trips' === side ? 0 : mapWidth));
+      var handle = $(document.createElementNS(svgNS, 'circle'));
+      handle.attr('class', 'handle');
+      handle.attr('r', '1ex');
+      handle.attr('cx', ('trips' === side ? 0 : mapWidth));
       var nodeHeight =
 	((node.firstElementChild === null) ?
 	  // no element children means it's just this row
@@ -267,13 +267,22 @@ $(function() {
 	  // element children means it could have child nodes underneath, so
 	  // only take the height of the first element child
 	  node.firstElementChild.offsetHeight);
-      handle.setAttribute('cy', node.offsetTop + nodeHeight/2);
+      handle.attr('cy', node.offsetTop + nodeHeight/2);
       if (node.id) {
-	handle.setAttribute('id', node.id + '__handle');
+	handle.attr('id', node.id + '__handle');
+      }
+      // add .from-concept-mapping-N to handle if this is a nil path
+      var fromConceptMappingsStr = $(node).attr('from-concept-mappings');
+      if (fromConceptMappingsStr !== undefined) {
+	var conceptMappingIndexes = fromConceptMappingsStr.split(/\s+/);
+	if (conceptMappingIndexes.length === 1 &&
+	    /\bnil$/i.test($(node).children('input').val())) {
+	  handle.addClass('from-concept-mapping-' + conceptMappingIndexes[0]);
+	}
       }
       handlesG.append(handle);
-      $(handle).on('mousedown', mouseDownOnHandle);
-      $(handle).on('mouseup', mouseUpOnHandle);
+      handle.on('mousedown', mouseDownOnHandle);
+      handle.on('mouseup', mouseUpOnHandle);
     }
   }
 
@@ -417,8 +426,9 @@ $(function() {
 		    findIndex(function(tripsRole) {
 		      return tripsRole.roles.includes(m.tripsRole.roles[0]);
 		    });
-		  if (tripsRoleIndex < 0) { // FIXME
-		    return; // break
+		  if (tripsRoleIndex < 0) {
+		    //return; // break
+		    throw new Error('WTF');
 		  }
 		  var yourRoleIndex =
 		    (('yourRole' in m) ?
@@ -438,8 +448,9 @@ $(function() {
 				  mStep.fillerType === rStep.fillerType);
 			});
 		      });
-		    if (tripsRolePathIndex < 0) { // FIXME
-		      return; // break
+		    if (tripsRolePathIndex < 0) {
+		      //return; // break
+		      throw new Error('WTF');
 		    }
 		    tripsRoleID =
 		      'path-' + tripsRolePathIndex + '-of-' + tripsRoleID;
@@ -997,7 +1008,7 @@ $(function() {
     }
   }
 
-  function addRolesAndPathsFromSelectedMapping(concept) {
+/*  function addRolesAndPathsFromSelectedMapping(concept) {
     concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
       roleRestrMap.paths = [];
     });
@@ -1028,6 +1039,50 @@ $(function() {
 	  }
 	});
       }
+    }
+  }*/
+
+  function addRolesAndPathsFromAllMappings(concept) {
+    concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
+      roleRestrMap.paths = [];
+    });
+    var yourIDs = yourJsTree.get_selected();
+    if (yourIDs.length == 1) {
+      var yourID = yourIDs[0];
+      var yourConcept = yourOntById[yourID];
+      // reset fromConceptMappings on all paths
+      yourConcept.conceptMappings.forEach(function(conceptMapping) {
+	conceptMapping.roleMappings.forEach(function(m) {
+	  if ('tripsRolePath' in m) {
+	    m.tripsRolePath.fromConceptMappings = {};
+	  }
+	});
+      });
+      var i = 0;
+      yourConcept.conceptMappings.forEach(function(conceptMapping) {
+	if (!conceptMapping.tripsConcepts.includes(concept)) {
+	  return; // break
+	}
+	conceptMapping.roleMappings.forEach(function(m) {
+	  var roleName = m.tripsRole.roles[0];
+	  var tripsRole =
+	    concept.dynamic_sem_frame.
+	    find(function(roleRestrMap) {
+	      return roleRestrMap.roles.includes(roleName);
+	    });
+	  if (tripsRole === undefined) {
+	    concept.dynamic_sem_frame.push(m.tripsRole);
+	    m.tripsRole.paths = [];
+	  }
+	  if ('tripsRolePath' in m) {
+	    m.tripsRolePath.fromConceptMappings[i] = true;
+	    if (!tripsRole.paths.includes(m.tripsRolePath)) {
+	      tripsRole.paths.push(m.tripsRolePath);
+	    }
+	  }
+	});
+	i++;
+      });
     }
   }
 
@@ -1108,7 +1163,8 @@ $(function() {
 
   function showTripsRoles(concept) {
     applyTripsInheritance(concept);
-    addRolesAndPathsFromSelectedMapping(concept);
+    //addRolesAndPathsFromSelectedMapping(concept);
+    addRolesAndPathsFromAllMappings(concept);
     showOtherMappedTripsConcepts(concept); // not roles, but whatever
     var sem_feats = concept.dynamic_sem_feats;
     var sem_frame = concept.dynamic_sem_frame;
@@ -1145,6 +1201,7 @@ $(function() {
 	  pathLi.children('input').val(pathStr);
 	}
 	pathLi.attr('id', pathLi.attr('id').replace(/template/, roleIndex));
+	pathLi.attr('from-concept-mappings', Object.keys(path.fromConceptMappings).join(' '));
       });
     });
   }
@@ -1435,6 +1492,16 @@ $(function() {
    * select/add/remove concept mapping
    */
 
+  function updateRoleMapHeading() {
+    var roleMapHeading = $('#details-heading td.map');
+    roleMapHeading.removeAttr('class');
+    roleMapHeading.addClass('map');
+    var i = $('#select-concept-mapping')[0].selectedIndex;
+    if (i >= 0) {
+      roleMapHeading.addClass('from-concept-mapping-' + i);
+    }
+  }
+
   function updateSelectConceptMapping() {
     var scm = $('#select-concept-mapping');
     scm.empty();
@@ -1453,11 +1520,13 @@ $(function() {
       });
     }
     scm.selectmenu('refresh');
+    updateRoleMapHeading();
   }
 
   $('#select-concept-mapping').selectmenu();
 
   $('#select-concept-mapping').on('selectmenuselect', function(evt, ui) {
+    updateRoleMapHeading();
     // update trips extra roles/paths
     var tripsIDs = tripsJsTree.get_selected();
     if (tripsIDs.length !== 1) { throw new Error('WTF'); }
@@ -1521,6 +1590,7 @@ $(function() {
     select.append('<option>' + newVal + '</option>');
     select.val(newVal);
     select.selectmenu('refresh');
+    updateRoleMapHeading();
     // construct and add the mapping itself
     var mapping = {
       tripsConcepts: [tripsConcept], // TODO take the full list from previously selected conceptMapping if any? (but copy the list, don't reference it)
@@ -1551,6 +1621,7 @@ $(function() {
     // remove option
     $('#select-concept-mapping option').last().remove();
     $('#select-concept-mapping').selectmenu('refresh');
+    updateRoleMapHeading();
     showTripsRoles(tripsConcept);
     // update role map once that renders
     setTimeout(function() {
@@ -1920,6 +1991,25 @@ $(function() {
 	  tripsRolePath: path
 	  // no yourRole
 	});
+	// make sure handle is colored properly
+	var conceptMappingIndex = 0;
+	for (var i = 0; i < yourConcept.conceptMappings.length; i++) {
+	  var cm = yourConcept.conceptMappings[i];
+	  if (cm.tripsConcepts.includes(concept)) {
+	    if (cm === conceptMapping) {
+	      break;
+	    }
+	    conceptMappingIndex++;
+	  }
+	}
+	var pathID = '#path-' + pathIndex + '-of-trips-role-' + roleIndex;
+	if ($(pathID).attr('from-concept-mappings') === undefined) {
+	  $(pathID).attr('from-concept-mappings', conceptMappingIndex);
+	}
+	$(pathID + '__handle').
+	  removeAttr('class').
+	  addClass('handle').
+	  addClass('from-concept-mapping-' + conceptMappingIndex);
       }
       // if final step just became not nil, remove any such fake mappings
       if (lastStepWasNil && !lastStepIsNil) {
@@ -1927,6 +2017,11 @@ $(function() {
 	  conceptMapping.roleMappings.filter(function(rm) {
 	    return (!(rm.tripsRolePath === path && !('yourRole' in rm)));
 	  });
+	// make sure handle isn't colored
+	var pathID = '#path-' + pathIndex + '-of-trips-role-' + roleIndex;
+	$(pathID + '__handle').
+	  removeAttr('class').
+	  addClass('handle');
       }
       input.value = values.join(' '); // normalize value
       // replace old path with newPath, but keep same Array object, in order to
@@ -1961,21 +2056,23 @@ $(function() {
 	     'path-' + (i-1) + '-of-trips-role-' + roleIndex);
 	}
 	// splice out the path
-	rolePath = role.paths.splice(pathIndex, 1);
+	rolePath = role.paths.splice(pathIndex, 1)[0];
       }
       var yourIDs = yourJsTree.get_selected();
       if (yourIDs.length != 1) { throw new Error('WTF'); }
       var yourConcept = yourOntById[yourIDs[0]];
-      var conceptMapping = selectedConceptMapping(concept, yourConcept, 'error');
-      conceptMapping.roleMappings =
-        conceptMapping.roleMappings.filter(function(m) {
-	  if (m.tripsRolePath === rolePath) {
-	    if (m.line !== undefined) { m.line.remove(); }
-	    return false;
-	  } else {
-	    return true;
-	  }
-	});
+      //var conceptMapping = selectedConceptMapping(concept, yourConcept, 'error');
+      yourConcept.conceptMappings.forEach(function(conceptMapping) {
+	conceptMapping.roleMappings =
+	  conceptMapping.roleMappings.filter(function(m) {
+	    if (m.tripsRolePath === rolePath) {
+	      if (m.line !== undefined) { m.line.remove(); }
+	      return false;
+	    } else {
+	      return true;
+	    }
+	  });
+      });
     }
     updateMap('trips', 'role', { openClose: true });
   }
@@ -2015,22 +2112,26 @@ $(function() {
 	  });
 	}
 	// splice out the role
-	role = concept.dynamic_sem_frame.splice(i, 1);
+	role = concept.dynamic_sem_frame.splice(i, 1)[0];
       }
       var yourIDs = yourJsTree.get_selected();
       if (yourIDs.length != 1) { throw new Error('WTF'); }
       var yourConcept = yourOntById[yourIDs[0]];
-      var conceptMapping = selectedConceptMapping(concept, yourConcept, 'error');
-      conceptMapping.roleMappings =
-        conceptMapping.roleMappings.filter(function(m) {
-	  if (role === m.tripsRole ||
-	      role.roles.includes(m.tripsRole.roles[0])) {
-	    if (m.line !== undefined) { m.line.remove(); }
-	    return false;
-	  } else {
-	    return true;
-	  }
-	});
+      //var conceptMapping = selectedConceptMapping(concept, yourConcept, 'error');
+      yourConcept.conceptMappings.forEach(function(conceptMapping) {
+	if (conceptMapping.tripsConcepts.includes(concept)) {
+	  conceptMapping.roleMappings =
+	    conceptMapping.roleMappings.filter(function(m) {
+	      if (role === m.tripsRole ||
+		  role.roles.includes(m.tripsRole.roles[0])) {
+		if (m.line !== undefined) { m.line.remove(); }
+		return false;
+	      } else {
+		return true;
+	      }
+	    });
+	}
+      });
     }
   }
 
@@ -2097,7 +2198,7 @@ $(function() {
 	     'your-role-' + (j-1));
 	}
 	// splice out the role
-	role = concept.roles.splice(i, 1);
+	role = concept.roles.splice(i, 1)[0];
       }
       concept.conceptMappings.forEach(function(cm) {
 	cm.roleMappings =
@@ -2719,9 +2820,12 @@ $(function() {
       // background of selected menu item
       '#select-concept-mapping-menu li.ui-menu-item:nth-child(' + (i+1) +
         ') div.ui-state-active { background-color: ' + color + "; }\n" +
-      // role mapping line
-      '#role-lines line.from-concept-mapping-' + i +
-      ' { stroke: ' + color + "; }\n"
+      // role mapping line, etc.
+      '.from-concept-mapping-' + i +
+      ' { stroke: ' + color +
+       '; fill: ' + color +
+       '; background-color: ' + color +
+       "; color: white; }\n"
     );
   });
   $(document.head).append(colorStyle);
