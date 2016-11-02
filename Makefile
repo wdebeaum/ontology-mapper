@@ -11,7 +11,8 @@ DOWNLOADS = \
 	style.min.css \
 	32px.png \
 	40px.png \
-	throbber.gif
+	throbber.gif \
+	jquery-ui
 
 # this doesn't work on Safari :(
 #	str.replace.template.xsl
@@ -21,8 +22,7 @@ SRCS = \
 	ontology-mapper.html \
 	ontology-mapper.css \
 	ontology-mapper.js \
-	dsl-to-json.xsl \
-	jquery-ui
+	dsl-to-json.xsl
 
 all: download
 
