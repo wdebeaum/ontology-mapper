@@ -428,8 +428,10 @@ $(function() {
 		      : -1);
 		  var tripsRoleID = 'trips-role-' + tripsRoleIndex;
 		  if (m.tripsRolePath) {
+		    var tripsRole =
+		      tripsConcept.dynamic_sem_frame[tripsRoleIndex];
 		    var tripsRolePathIndex =
-		      m.tripsRole.paths.findIndex(function(path) {
+		      tripsRole.paths.findIndex(function(path) {
 			return path.every(function(rStep, i) {
 			  mStep = m.tripsRolePath[i];
 			  return (mStep.role === rStep.role &&
