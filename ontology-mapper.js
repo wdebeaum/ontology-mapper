@@ -1966,7 +1966,7 @@ $(function() {
 	throw 'No your concept selected, cannot save role path';
       }
       var yourConcept = yourOntById[yourIDs[0]];
-      var conceptMapping = selectedConceptMapping(concept, yourConcept, 'error');
+      var conceptMapping = selectedConceptMapping(concept, yourConcept, 'add');
       var path = role.paths[pathIndex]; // old path
       var lastStepIsNil = (lastStep.fillerType === 'nil');
       var lastStepWasNil =
