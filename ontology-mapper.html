@@ -191,14 +191,14 @@
        </select>
        (<i>optional</i>)
        <ul>
-        <li id="path-template-of-trips-role-template" class="template own" onclick="selectRole(event.currentTarget); event.stopPropagation();"><input type="text" onchange="changeTripsRolePath(event)" placeholder="TRIPS concept/:role path" required>
+        <li id="path-template-of-trips-role-template" class="template own" onclick="selectRole(event.currentTarget); event.stopPropagation();"><input type="text" placeholder="TRIPS concept/:role path" required>
 	<li id="path-template-of-trips-role-template" class="template inherited" onclick="selectRole(event.currentTarget); event.stopPropagation();">
 	<li class="controls">role filler/path to map from: <button onclick="addTripsRolePath(event)">+</button> <button onclick="remTripsRolePath(event)">-</button>
        </ul>
       <li id="trips-role-template" class="template original" onclick="selectRole(event.currentTarget)">
        <!-- role desc goes here -->
        <ul>
-        <li id="path-template-of-trips-role-template" class="template own" onclick="selectRole(event.currentTarget); event.stopPropagation();"><input type="text" onchange="changeTripsRolePath(event)" placeholder="TRIPS concept/:role path" required>
+        <li id="path-template-of-trips-role-template" class="template own" onclick="selectRole(event.currentTarget); event.stopPropagation();"><input type="text" placeholder="TRIPS concept/:role path" required>
 	<li id="path-template-of-trips-role-template" class="template inherited" onclick="selectRole(event.currentTarget); event.stopPropagation();">
 	<li class="controls">role filler/path to map from: <button onclick="addTripsRolePath(event)">+</button> <button onclick="remTripsRolePath(event)">-</button>
        </ul>
@@ -232,10 +232,10 @@
       <li class="controls"><button id="add-your-role">+</button> <button id="rem-your-role">-</button>
      </ul>
      <dt class="inline"><label for="your-words">words</label><dd>
-     <input id="your-words" type="text" placeholder="comma-separated list">
+     <input id="your-words" type="text" class="spellcheck" placeholder="comma-separated list">
      <dt>examples<dd>
      <ul id="your-examples">
-      <li class="template" id="your-example-template"><input type="text" oninput="inputYourExample(event)" required>
+      <li class="template" id="your-example-template"><input type="text" class="spellcheck" oninput="inputYourExample(event)" required>
       <li class="controls"><button id="add-example">+</button> <button id="rem-example">-</button>
      </ul>
     </dl>

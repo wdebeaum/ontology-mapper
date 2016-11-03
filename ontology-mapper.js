@@ -1917,7 +1917,8 @@ $(function() {
     selectLi(newLi[0]);
     var input = newLi.children('input');
     input.autocomplete({
-      source: autocompleteTripsRolePath
+      source: autocompleteTripsRolePath,
+      change: changeTripsRolePath
     });
     input.first().focus();
     updateMap('trips', 'role', { openClose: true });
@@ -2028,6 +2029,7 @@ $(function() {
       // preserve references
       path.splice.bind(path, 0, path.length).apply(path, newPath);
     } catch (e) {
+      console.log(e);
       alert(e);
       setTimeout(function() { input.focus(); }, 0);
     }
@@ -2771,6 +2773,10 @@ $(function() {
 
   $('#trips-details').hide();
   $('#your-details').hide();
+
+  // prevent Safari from putting its own spellcheck popup on top of our
+  // autocomplete popup
+  $('input').not('.spellcheck').attr('spellcheck', 'false');
 
   /*
    * add color coding CSS rules
