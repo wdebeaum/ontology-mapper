@@ -168,7 +168,8 @@ var {
  <li>Search for concepts by name in TRIPS ontology or your ontology (with autocomplete).
  <li>Load/save your ontology and mappings as JSON.
  <li>Add a prefix to all concepts/roles in your ontology.
- <li>Display mappings between concepts that aren't visible because that part of the tree is collapsed, as if they were mappings between their nearest visible ancestors, except partially transparent.
+ <li>Mappings between concepts that aren't visible because that part of the tree is collapsed, are displayed as if they were mappings between their nearest visible ancestors, except partially transparent.
+ <li>Role mapping lines for different concept mappings for the same pair of concepts are color-coded and displayed together.
  <li>Word counts next to each concept show how many words under that concept are also under the selected concept on the other side.
  <li>Inheritance of original TRIPS roles and their restrictions, and of your roles (inherited things are gray instead of black).
 </ul>
@@ -178,7 +179,6 @@ var {
  <li>Display mappings between TRIPS concepts and WordNet senses in the TRIPS concept details, and use them as extra words for the word count feature.
  <li>Extend mapping lines into tree views, up to the name of the concept.
  <li>Build Lisp mapping rules for use in TRIPS.
- <li>Color code lines for different concept mappings for the same pair of concepts.
 </ul>
 
 <h3>Known Bugs</h3>
@@ -200,9 +200,9 @@ var {
 <tr><td colspan="2" class="pane">[TRIPS concept detail view]</td><td class="pane">[role mappings]</td><td colspan="2" class="pane">[your concept detail view]</td></tr>
 </table>
 
-<p>The <button>+</button> and <button>-</button> buttons add and remove things. The pair of buttons labeled "concept" at the top right add and remove concepts in your ontology. The pairs labeled "map" in the middle add and remove mappings between the TRIPS ontology and your ontology. The top middle pair (in the trees row) add and remove mappings between the selected <em>concepts</em>, and the bottom middle pair (in the details/roles row) add and remove mappings between the selected <em>roles</em>. Mappings appear in the middle column as lines drawn between the mapped concepts/roles. Mappings between concepts hidden because that part of the tree is collapsed are drawn between their nearest visible ancestors, and are partially transparent. You can also drag between the black spots in the mappings column to add mappings.</p>
+<p>The <button>+</button> and <button>-</button> buttons add and remove things. The pair of buttons labeled "concept" at the top right add and remove concepts in your ontology. The pairs labeled "map" in the middle add and remove mappings between the TRIPS ontology and your ontology. The top middle pair (in the trees row) add and remove mappings between the selected <em>concepts</em>, and the bottom middle pair (in the details/roles row) add and remove mappings between the selected <em>roles</em>. Mappings appear in the middle column as lines drawn between the mapped concepts/roles. Mappings between concepts hidden because that part of the tree is collapsed are drawn between their nearest visible ancestors, and are partially transparent. You can also drag between the black spots in the mappings column (drag handles) to add mappings.</p>
 
-<p>Role mappings are specific to the currently selected concept mapping. You may make multiple concept mappings for a given pair of concepts, with different sets of role mappings. Use the selection box to the right of the concept map <button>-</button> button to switch between different concept mappings for the selected pair of concepts.</p>
+<p>Role mappings are specific to the currently selected concept mapping. You may make multiple concept mappings for a given pair of concepts, with different sets of role mappings. Use the selection box to the right of the concept map <button>-</button> button to switch between different concept mappings for the selected pair of concepts. Role mapping lines for all the concept mappings between the selected pair of concepts are displayed at once. But they are color coded according to the concept mapping they are a part of, as are the entries in the selection box, and the heading above the role mappings section.</p>
 
 <p>Each side of the trees section has a search box at the top right. Enter the name of a concept to search for it in the ontology on that side. If found, its ancestors will be expanded, it will be selected, and it will scroll into view. If not, an alert will appear.</p>
 
@@ -241,7 +241,7 @@ var {
 
 <p>In the same field, you may also specify a path through roles, and optionally filler types, to the term that should be used to fill your role. Items in the path should be separated by commas and/or spaces, and role names should have a <code>:</code> prefix to distinguish them from concept names. For example, say you have a TRIPS term graph where a term of type <code>foo</code> has a role <code>:bar</code>, filled by another term of type <code>baz</code>, which in turn has a role <code>:qux</code>. And say you have mapped <code>foo</code> to your concept <code>fred</code>, but you want <code>:qux</code> to be mapped to your role <code>:glarch</code> in this situation. Then you would click the <button>+</button> under the <code>:bar</code> role in <code>foo</code>'s details, enter <code>baz :qux</code> in the box that appears, and map that new line (instead of the whole <code>:bar</code> role) to your role <code>:glarch</code> in your concept <code>fred</code>.</p>
 
-<p>The last role filler type may be <code>nil</code>. This indicates that the role must <em>not</em> be filled for the concept mapping to apply. Role paths ending with <code>nil</code> may not be mapped to one of your roles. Role paths not ending with <code>nil</code> must be mapped before saving or moving to a different concept or concept mapping, or they will not be saved (same as extra roles).</p>
+<p>The last role filler type may be <code>nil</code>. This indicates that the role must <em>not</em> be filled for the concept mapping to apply. Role paths ending with <code>nil</code> may not be mapped to one of your roles. To indicate which concept mapping such a path is part of, its drag handle is color coded. Role paths not ending with <code>nil</code> must be mapped before saving or moving to a different concept or concept mapping, or they will not be saved (same as extra roles).</p>
 
 <p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). (Safari and IE users: this might just open the file in the browser instead, so you will then have to use your browser's "save as" function, and save only the page source and not a web archive/complete webpage. IE users: upgrade to Edge. Safari users: complain to Apple and tell them to implement the <code>download</code> attribute.) Click the <button>load</button> button to the left of the <button>save</button> button to load such a file back into the page.</p>
 
