@@ -427,7 +427,6 @@ $(function() {
 		      return tripsRole.roles.includes(m.tripsRole.roles[0]);
 		    });
 		  if (tripsRoleIndex < 0) {
-		    //return; // break
 		    throw new Error('WTF');
 		  }
 		  var yourRoleIndex =
@@ -449,7 +448,6 @@ $(function() {
 			});
 		      });
 		    if (tripsRolePathIndex < 0) {
-		      //return; // break
 		      throw new Error('WTF');
 		    }
 		    tripsRoleID =
@@ -457,6 +455,16 @@ $(function() {
 		  }
 		  if (yourRoleIndex >= 0) {
 		    var yourRoleID = 'your-role-' + yourRoleIndex;
+		    if (m.yourRoleFiller) {
+		      var yourRole = yourConcept.roles[yourRoleIndex];
+		      var yourRoleFillerIndex =
+		        yourRole.fillers.indexOf(m.yourRoleFiller);
+		      if (yourRoleFillerIndex < 0) {
+			throw new Error('WTF');
+		      }
+		      yourRoleID =
+		        'filler-' + yourRoleFillerIndex + '-of-' + yourRoleID;
+		    }
 		    m.line = addLine(linesG, tripsRoleID, yourRoleID);
 		    m.line.addClass(lineClass);
 		    if (m.optional) {
@@ -1272,7 +1280,9 @@ $(function() {
       ancestor.roles.forEach(function(role) {
 	if ((!role.inherited) && // don't trust ancestor's inherited roles
 	    !concept.roles.find(function(r) { return r.name === role.name; })) {
-	  concept.roles.push(Object.assign({ inherited: true }, role));
+	  // FIXME use __proto__ instead of Object.assign here?
+	  concept.roles.push(
+	      Object.assign({ inherited: true }, role, { fillers: [] }));
 	}
       });
     }
@@ -1287,14 +1297,20 @@ $(function() {
     applyYourInheritance(concept);
     var ul = $('#your-roles')[0];
     clearUlUpToTemplate($(ul));
-    concept.roles.forEach(function(role) {
+    concept.roles.forEach(function(role, roleIndex) {
       if (role.inherited) {
 	var newLi = addLiBeforeTemplate(ul, '.inherited');
-	newLi.text(role.name);
+	newLi.prepend(document.createTextNode(role.name));
       } else {
 	var newLi = addLiBeforeTemplate(ul, '.own');
 	newLi.on('rem', remYourRole);
 	$(newLi.children()[0]).val(role.name);
+	role.fillers.forEach(function(filler) {
+	  var fillerLi = addLiBeforeTemplate(newLi.children('ul'), '.own');
+	  fillerLi.children('input').val(filler.value);
+	  fillerLi.attr('id',
+	      fillerLi.attr('id').replace(/template/, roleIndex));
+	});
       }
     });
     setTimeout(function() {
@@ -1401,21 +1417,40 @@ $(function() {
     var line = selectedLi($('#role-lines'));
     if (line.length == 1) {
       // find the roleMapping object corresponding to this line
-      var fields = line.attr('id').split(/-|__/);
-      //  0    1 2   3     4    5  6   7    8    9
-      //             0     1    2  3   4    5    6
-      // (path-A-of-)trips-role-B__to__your-role-C
-      var pathIndex;
-      if (fields.length == 10) {
-	fields.shift(); // path
-	pathIndex = parseInt(fields.shift(), 10);
-	fields.shift(); // of
-      }
-      if (fields.length != 7) {
+      var ids = line.attr('id').split(/__to__/);
+      if (ids.length != 2) {
 	throw new Error('WTF: ' + JSON.stringify(line.attr('id')));
       }
-      var tripsRoleIndex = parseInt(fields[2], 10);
-      var yourRoleIndex = parseInt(fields[6], 10);
+      var tripsID = ids[0];
+      var tripsFields = tripsID.split(/-/);
+      //  0    1 2   3     4    5
+      //             0     1    2
+      // (path-A-of-)trips-role-B
+      var pathIndex;
+      if (tripsFields.length == 6) {
+	tripsFields.shift(); // path
+	pathIndex = parseInt(tripsFields.shift(), 10);
+	tripsFields.shift(); // of
+      }
+      if (tripsFields.length != 3) {
+	throw new Error('WTF: ' + JSON.stringify(tripsID));
+      }
+      var tripsRoleIndex = parseInt(tripsFields[2], 10);
+      var yourID = ids[1];
+      var yourFields = yourID.split(/-/);
+      //  0      1 2   3    4    5
+      //               0    1    2
+      // (filler-A-of-)your-role-B
+      var fillerIndex;
+      if (yourFields.length == 6) {
+	yourFields.shift(); // filler
+	fillerIndex = parseInt(yourFields.shift(), 10);
+	yourFields.shift(); // of
+      }
+      if (yourFields.length != 3) {
+	throw new Error('WTF: ' + JSON.stringify(yourID));
+      }
+      var yourRoleIndex = parseInt(yourFields[2], 10);
       var tripsConcept = tripsOnt[tripsJsTree.get_selected()[0].replace(/^ont__/, '')]
       var yourConcept = yourOntById[yourJsTree.get_selected()[0]];
       var tripsRole = tripsConcept.dynamic_sem_frame[tripsRoleIndex];
@@ -1424,12 +1459,17 @@ $(function() {
       if (pathIndex !== undefined) {
 	tripsRolePath = tripsRole.paths[pathIndex];
       }
+      var yourRoleFiller;
+      if (fillerIndex !== undefined) {
+	yourRoleFiller = yourRole.fillers[fillerIndex];
+      }
       var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept, 'error');
       var roleMapping =
         conceptMapping.roleMappings.find(function(m) {
 	  return (tripsRole.roles.includes(m.tripsRole.roles[0]) &&
 	          tripsRolePath === m.tripsRolePath &&
-		  yourRole === m.yourRole);
+		  yourRole === m.yourRole &&
+		  yourRoleFiller === m.yourRoleFiller);
 	});
       if (this.checked) {
 	roleMapping.optional = true;
@@ -1796,7 +1836,15 @@ $(function() {
     }
     var yourConceptID = yourJsTree.get_selected()[0];
     var yourConcept = yourOntById[yourConceptID];
-    var yourRole = yourConcept.roles[yourLIs.index()];
+    var yourRole;
+    var yourRoleFiller;
+    var up = yourLIs.parent().parent();
+    if (up[0].tagName === 'LI') {
+      yourRole = yourConcept.roles[up.index()];
+      yourRoleFiller = yourRole.fillers[yourLIs.index()];
+    } else {
+      yourRole = yourConcept.roles[yourLIs.index()];
+    }
     var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept, 'add');
     switch (addOrRem) {
       case 'add':
@@ -1813,6 +1861,9 @@ $(function() {
 	if (tripsRolePath !== undefined) {
 	  mapping.tripsRolePath = tripsRolePath;
 	}
+	if (yourRoleFiller !== undefined) {
+	  mapping.yourRoleFiller = yourRoleFiller;
+	}
 	conceptMapping.roleMappings.push(mapping);
 	return mapping;
       case 'rem':
@@ -1820,7 +1871,8 @@ $(function() {
 	  conceptMapping.roleMappings.findIndex(function(m) {
 	    return (tripsRole.roles.includes(m.tripsRole.roles[0]) &&
 		    tripsRolePath === m.tripsRolePath &&
-		    yourRole === m.yourRole);
+		    yourRole === m.yourRole &&
+		    yourRoleFiller === m.yourRoleFiller);
 	  });
 	if (i < 0) { throw new Error('WTF'); }
 	var mapping = conceptMapping.roleMappings.splice(i, 1)[0];
@@ -1868,6 +1920,14 @@ $(function() {
 	};
         newLi.on('rem', remTripsRole);
       } else if ('add-your-role' == this.id) {
+	// add an empty role
+	var id = yourJsTree.get_selected()[0];
+	var concept = yourOntById[id];
+	var i = newLi.index();
+	concept.roles[i] = {
+	  name: '',
+	  fillers: []
+	};
 	newLi.on('rem', remYourRole);
       } else if ('add-example' == this.id) {
 	newLi.on('rem', remExample);
@@ -1982,7 +2042,7 @@ $(function() {
 	     some(function(o) { return name === o.text.replace(/^:/,''); });
   }
 
-  window.changeTripsRolePath = function(evt) {
+  function changeTripsRolePath(evt) {
     var input = evt.currentTarget;
     var roleIndex = $(input.parentNode.parentNode.parentNode).index();
     var pathIndex = $(input.parentNode).index();
@@ -2093,7 +2153,7 @@ $(function() {
       remSelectedLi(evt.currentTarget.parentNode.parentNode,
 		    function(li) { return li.hasClass('own'); });
     if (oldLi === null) { return; }
-    var idFields = oldLi.attr('id').split(/-/); // type-#-of-trips-role-#
+    var idFields = oldLi.attr('id').split(/-/); // path-#-of-trips-role-#
     var roleIndex = parseInt(idFields[5]);
     var pathIndex = parseInt(idFields[1]);
     var id = tripsJsTree.get_selected()[0];
@@ -2227,12 +2287,10 @@ $(function() {
     var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
     var i = $(evt.currentTarget).parent().index();
-    var role = { name: '' };
     if (concept.roles.length <= i) {
-      concept.roles[i] = role;
-    } else {
-      role = concept.roles[i];
+      throw new Error('WTF');
     }
+    var role = concept.roles[i];
     role[key] = $(evt.currentTarget).val();
   };
 
@@ -2268,6 +2326,81 @@ $(function() {
       });
     }
   }
+
+  // TODO factor out stuff this has in common with add/remTripsRolePath
+  window.addYourRoleFiller = function(evt) {
+    var ul = evt.currentTarget.parentNode.parentNode;
+    var newLi = addLiBeforeTemplate(ul, '.own');
+    var roleIndex = $(ul.parentNode).index();
+    var id = yourJsTree.get_selected()[0];
+    var concept = yourOntById[id];
+    var role = concept.roles[roleIndex];
+    if (role.inherited) {
+      delete role.inherited;
+      // FIXME the fact that this changes to non-inherited doesn't show up in
+      // the GUI immediately, but can't just call showYourRoles here because
+      // we're in the middle of changing what it shows
+    }
+    role.fillers.push({ value: '' });
+    // add role index to ID (path index already taken care of above)
+    newLi.attr('id', newLi.attr('id').replace(/template/, '' + roleIndex));
+    evt.stopPropagation(); // don't select the whole role
+    selectLi(newLi[0]);
+    var input = newLi.children('input');
+    input.first().focus();
+    updateMap('your', 'role', { openClose: true });
+  };
+
+  window.remYourRoleFiller = function(evt) {
+    var oldLi =
+      remSelectedLi(evt.currentTarget.parentNode.parentNode,
+		    function(li) { return li.hasClass('own'); });
+    if (oldLi === null) { return; }
+    var idFields = oldLi.attr('id').split(/-/); // filler-#-of-your-role-#
+    var roleIndex = parseInt(idFields[5]);
+    var fillerIndex = parseInt(idFields[1]);
+    var id = yourJsTree.get_selected()[0];
+    var concept = yourOntById[id];
+    var role = concept.roles[roleIndex];
+    if (role.fillers[fillerIndex] !== undefined) {
+      var filler;
+      if (fillerIndex == role.fillers.length - 1) {
+	// can just pop off the path
+	filler = role.fillers.pop();
+      } else {
+	// adjust IDs of all following lis
+	for (var i = fillerIndex + 1; i < role.fillers.length; i++) {
+	  $('#filler-' +  i    + '-of-your-role-' + roleIndex).attr('id',
+	     'filler-' + (i-1) + '-of-your-role-' + roleIndex);
+	}
+	// splice out the path
+	filler = role.fillers.splice(fillerIndex, 1)[0];
+      }
+      concept.conceptMappings.forEach(function(conceptMapping) {
+	conceptMapping.roleMappings =
+	  conceptMapping.roleMappings.filter(function(m) {
+	    if (m.yourRoleFiller === filler) {
+	      if (m.line !== undefined) { m.line.remove(); }
+	      return false;
+	    } else {
+	      return true;
+	    }
+	  });
+      });
+    }
+    updateMap('your', 'role', { openClose: true });
+  };
+
+  window.changeYourRoleFiller = function(evt) {
+    var input = evt.target;
+    var roleIndex = $(input.parentNode.parentNode.parentNode).index();
+    var fillerIndex = $(input.parentNode).index();
+    var id = yourJsTree.get_selected()[0];
+    var concept = yourOntById[id];
+    var role = concept.roles[roleIndex];
+    var filler = role.fillers[fillerIndex];
+    filler.value = $(input).val();
+  };
 
   $('#your-words').on('input', function(evt) {
     var id = yourJsTree.get_selected()[0];
@@ -2337,6 +2470,9 @@ $(function() {
 	    }
 	    if ('yourRole' in rm) {
 	      repPath.push(rm.yourRole.name);
+	    }
+	    if ('yourRoleFiller' in rm) {
+	      repPath.push(rm.yourRoleFiller.value);
 	    }
 	    return repPath;
 	  })
@@ -2431,7 +2567,7 @@ $(function() {
 	      if (!Array.isArray(r.mappings)) {
 		fail('expected role mappings to be an array');
 	      }
-	      var yourRole = { name: r.name };
+	      var yourRole = { name: r.name, fillers: [] };
 	      roles.push(yourRole);
 	      //r.mappings.forEach(function(m) { // can't use continue :(
 	      mapping: for (var i = 0; i < r.mappings.length; i++) {
@@ -2512,7 +2648,7 @@ $(function() {
 	      // end load old format role
 	      break;
 	    case 'string': // new format
-	      roles.push({ name: r });
+	      roles.push({ name: r, fillers: [] });
 	      break;
 	    default:
 	      fail('expected role to be either a string or an object');
@@ -2580,11 +2716,19 @@ $(function() {
 		  fail('expected rolePathMapping to be an array with at least one element');
 		}
 		var yourRoleName = undefined;
-		if ('string' === typeof repPath[repPath.length-1]) {
+		var yourRoleFillerValue = undefined;
+		if (repPath.length > 1 &&
+		    ('string' === typeof repPath[repPath.length-2])) {
+		  if (!('string' === typeof repPath[repPath.length-1])) {
+		    fail('expected last element of rolePathMapping to be a string given that the second to last element is a string');
+		  }
+		  yourRoleFillerValue = repPath.pop();
+		  yourRoleName = repPath.pop();
+		} else if ('string' === typeof repPath[repPath.length-1]) {
 		  yourRoleName = repPath.pop();
 		}
 		if (repPath.length == 0) {
-		  fail('expected rolePathMapping to have more than just your role name as an element');
+		  fail('expected rolePathMapping to have some step objects');
 		}
 		var optional = false;
 		if (repPath[0] === 'optional') {
@@ -2592,7 +2736,7 @@ $(function() {
 		  repPath.shift();
 		}
 		if (repPath.length == 0) {
-		  fail('expected rolePathMapping to have more than just "optional" and your role name as elements');
+		  fail('expected rolePathMapping to have some step objects');
 		}
 		if (yourRoleName === undefined &&
 		    repPath[repPath.length-1].fillerType !== 'nil') {
@@ -2614,7 +2758,7 @@ $(function() {
 		  roles: [tripsRoleName],
 		  paths: [],
 		  optional: true
-		}
+		};
 		// add .inherited=true or .added=true, depending on whether all
 		// the tripsConcepts have a non-added role with this name
 		if (conceptMapping.tripsConcepts.every(function(c) {
@@ -2642,6 +2786,18 @@ $(function() {
 		    // assume it's inherited and fake it (to be fixed later)
 		    roleMapping.yourRole =
 		      { name: yourRoleName, inherited: true };
+		  }
+		}
+		if (yourRoleFillerValue !== undefined) {
+		  roleMapping.yourRoleFiller =
+		    roleMapping.yourRole.fillers.find(function(f) {
+		      return f.value === yourRoleFillerValue;
+		    });
+		  if (roleMapping.yourRoleFiller === undefined) {
+		    roleMapping.yourRoleFiller =
+		      { value: yourRoleFillerValue };
+		    roleMapping.yourRole.fillers.push(
+		        roleMapping.yourRoleFiller);
 		  }
 		}
 		if (repPath.length > 1 || ('fillerType' in repPath[0])) {

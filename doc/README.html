@@ -163,6 +163,7 @@ var {
    <li>Mappings between specific TRIPS role filler types, and the roles of your concept, as part of a concept mapping.
    <li>Use "nil" filler type in a concept mapping, to indicate TRIPS roles that must not be filled for the mapping to apply.
    <li>Extra roles in TRIPS concepts.
+   <li>Mappings between TRIPS roles/paths and your role filler <em>values</em> (not types, not paths)
    <li>Multiple concept mappings for a given pair of concepts, with different role mappings (and associated role filler types and extra roles).
   </ul>
  <li>Search for concepts by name in TRIPS ontology or your ontology (with autocomplete).
@@ -245,12 +246,14 @@ var {
 
 <p>The last role filler type may be <code>nil</code>. This indicates that the role must <em>not</em> be filled for the concept mapping to apply. Role paths ending with <code>nil</code> may not be mapped to one of your roles. To indicate which concept mapping such a path is part of, its drag handle is color coded. Role paths not ending with <code>nil</code> must be mapped before saving or moving to a different concept or concept mapping, or they will not be saved (same as extra roles).</p>
 
+<p>There is a similar field you can add under one of your roles, but with slightly different semantics. It holds a single <em>value</em> (not a type, and not a path) to fill the role with instead of the value from the TRIPS side of the role mapping. For example, if you mapped the TRIPS path <code>color-val :value red</code> directly to your role <code>color-value</code>, it would end up being filled by the term of type <code>ONT::red</code>. But if you instead added the role filler value <code>red</code> under your role, and mapped to that, your role would be filled by that simple value rather than by the term.</p>
+
 <p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). (Safari and IE users: this might just open the file in the browser instead, so you will then have to use your browser's "save as" function, and save only the page source and not a web archive/complete webpage. IE users: upgrade to Edge. Safari users: complain to Apple and tell them to implement the <code>download</code> attribute.) Click the <button>load</button> button to the left of the <button>save</button> button to load such a file back into the page.</p>
 
 <p>If you want a prefix to be added to all the concept and role names in your ontology, enter it in the box labeled "prefix" to the right of the <button>save</button> button before saving. This is useful for adding a Lisp package to these symbols, for example entering "foo::" in this field will put all symbols in the "foo" package. The prefix won't otherwise show up in the GUI, to avoid clutter.</p>
 
 <h2>JSON Save Format</h2>
-<p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code> and <code>"fillerType"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept. Note that the first element of <code>"rolePathMappings"</code> below is an example of a normal mapped role, while the second is an example of a "nil" role filler type, which is not mapped to one of your roles. The presence of <code>"optional"</code> at the start of the first indicates that the role mapping is optional, its absence would indicate that the role mapping is required. Paths ending with "nil" are never optional.</p>
+<p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code> and <code>"fillerType"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept. Note that the first element of <code>"rolePathMappings"</code> below is an example of a normal mapped role, while the second is an example of a "nil" role filler type, which is not mapped to one of your roles. The presence of <code>"optional"</code> at the start of the first indicates that the role mapping is optional, its absence would indicate that the role mapping is required. The first role mapping is also an example of a mapping to a filler value of one of your roles, because it ends with <code>"<var>your role filler value</var>"</code>. Mappings directly to one of your roles only have one string at the end, <code>"<var>your role name</var>"</code>. Paths ending with a step with <code>"fillerType": "nil"</code> are never optional, and never have your role name or your role filler value (because they aren't mapped).</p>
 
 <code><pre>
 {
@@ -272,7 +275,8 @@ var {
 							"fillerType": "ont::<var>trips concept name</var>"
 						},
 						<var>more steps (first step is required)...</var>
-						"<var>your role name</var>"
+						"<var>your role name</var>",
+						"<var>your role filler value</var>"
 					],
 					[
 						{

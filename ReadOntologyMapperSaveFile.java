@@ -80,8 +80,11 @@ public class ReadOntologyMapperSaveFile {
 		  System.out.println(fillerType);
 		}
 	      } else {
-		// NOTE: at the end, this is your role name; at the beginning
-		// it can only be "optional"
+		// NOTE: there are actually three kinds of strings in paths:
+		// 1. at the beginning: "optional"
+		// 2. at the end, or second to last with another string
+		//    following: your role name
+		// 3. at the end, after your role name: your role filler value
 		String role = (String)stepObject;
 		System.out.println(role);
 	      }
