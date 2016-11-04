@@ -204,6 +204,8 @@ var {
 
 <p>Role mappings are specific to the currently selected concept mapping. You may make multiple concept mappings for a given pair of concepts, with different sets of role mappings. Use the selection box to the right of the concept map <button>-</button> button to switch between different concept mappings for the selected pair of concepts. Role mapping lines for all the concept mappings between the selected pair of concepts are displayed at once. But they are color coded according to the concept mapping they are a part of, as are the entries in the selection box, and the heading above the role mappings section.</p>
 
+<p>Role mappings may be optional or required. An optional role mapping is displayed with a dashed line, and when the role mapping is selected, the checkbox labeled "optional" is checked. You can change the optionality of a role mapping by checking or unchecking this checkbox when it is selected.</p>
+
 <p>Each side of the trees section has a search box at the top right. Enter the name of a concept to search for it in the ontology on that side. If found, its ancestors will be expanded, it will be selected, and it will scroll into view. If not, an alert will appear.</p>
 
 <p>Create some concepts by clicking the concept <button>+</button> button and entering a name for each one in your concept detail view. Then you can drag them around the tree view in order to form a hierarchy. You can select multiple concepts at once by holding the shift or control keys, and then you can drag the whole selection as a unit. You can expand or collapse concept nodes in the tree views either by clicking on the arrow to the left of the concept, or by double-clicking the concept itself. It is also possible to navigate the tree views using the keyboard: up/down arrows move the cursor, left/right arrows collapse/expand the concept under the cursor, or move up/down the hierarchy, and enter selects the concept under the cursor.</p>
@@ -248,7 +250,7 @@ var {
 <p>If you want a prefix to be added to all the concept and role names in your ontology, enter it in the box labeled "prefix" to the right of the <button>save</button> button before saving. This is useful for adding a Lisp package to these symbols, for example entering "foo::" in this field will put all symbols in the "foo" package. The prefix won't otherwise show up in the GUI, to avoid clutter.</p>
 
 <h2>JSON Save Format</h2>
-<p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code> and <code>"fillerType"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept. Note that the first element of <code>"rolePathMappings"</code> below is an example of a normal mapped role, while the second is an example of a "nil" role filler type, which is not mapped to one of your roles.</p>
+<p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code> and <code>"fillerType"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept. Note that the first element of <code>"rolePathMappings"</code> below is an example of a normal mapped role, while the second is an example of a "nil" role filler type, which is not mapped to one of your roles. The presence of <code>"optional"</code> at the start of the first indicates that the role mapping is optional, its absence would indicate that the role mapping is required. Paths ending with "nil" are never optional.</p>
 
 <code><pre>
 {
@@ -264,6 +266,7 @@ var {
 				],
 				"rolePathMappings": [
 					[
+						"optional",
 						{
 							"role": "ont::<var>trips role name</var>",
 							"fillerType": "ont::<var>trips concept name</var>"

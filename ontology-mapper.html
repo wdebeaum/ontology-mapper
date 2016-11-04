@@ -66,7 +66,8 @@
   <tr id="details-heading">
    <td colspan="2"><h3>TRIPS concept details</h3></td>
 
-   <td class="map">map: <button id="add-role-mapping">+</button> <button id="rem-role-mapping">-</button></td>
+   <td class="map">map: <button id="add-role-mapping">+</button> <button id="rem-role-mapping">-</button>
+   <label><input id="role-mapping-optional" type="checkbox"> optional</label></td>
 
    <td colspan="2"><h3>Your concept details</h3></td>
   </tr>
@@ -189,7 +190,6 @@
 	 <option>:source-reln
 	 <option>:stimulus
        </select>
-       (<i>optional</i>)
        <ul>
         <li id="path-template-of-trips-role-template" class="template own" onclick="selectRole(event.currentTarget); event.stopPropagation();"><input type="text" placeholder="TRIPS concept/:role path" required>
 	<li id="path-template-of-trips-role-template" class="template inherited" onclick="selectRole(event.currentTarget); event.stopPropagation();">

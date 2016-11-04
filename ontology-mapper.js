@@ -459,6 +459,13 @@ $(function() {
 		    var yourRoleID = 'your-role-' + yourRoleIndex;
 		    m.line = addLine(linesG, tripsRoleID, yourRoleID);
 		    m.line.addClass(lineClass);
+		    if (m.optional) {
+		      m.line.addClass('optional');
+		    }
+		    if ($('#' + tripsRoleID).hasClass('selected') &&
+		        $('#' + yourRoleID).hasClass('selected')) {
+		      m.line.addClass('selected');
+		    }
 		  }
 		});
 	      }
@@ -1072,6 +1079,7 @@ $(function() {
 	    });
 	  if (tripsRole === undefined) {
 	    concept.dynamic_sem_frame.push(m.tripsRole);
+	    tripsRole = m.tripsRole;
 	    m.tripsRole.paths = [];
 	  }
 	  if ('tripsRolePath' in m) {
@@ -1385,8 +1393,53 @@ $(function() {
     var line = $('#' + tripsLi.attr('id') + '__to__' + yourLi.attr('id'));
     deselectAllLis($('#role-lines'));
     selectLi(line);
+    $('#role-mapping-optional').prop('checked', line.hasClass('optional'));
     return true;
   };
+
+  $('#role-mapping-optional').on('change', function(evt) {
+    var line = selectedLi($('#role-lines'));
+    if (line.length == 1) {
+      // find the roleMapping object corresponding to this line
+      var fields = line.attr('id').split(/-|__/);
+      //  0    1 2   3     4    5  6   7    8    9
+      //             0     1    2  3   4    5    6
+      // (path-A-of-)trips-role-B__to__your-role-C
+      var pathIndex;
+      if (fields.length == 10) {
+	fields.shift(); // path
+	pathIndex = parseInt(fields.shift(), 10);
+	fields.shift(); // of
+      }
+      if (fields.length != 7) {
+	throw new Error('WTF: ' + JSON.stringify(line.attr('id')));
+      }
+      var tripsRoleIndex = parseInt(fields[2], 10);
+      var yourRoleIndex = parseInt(fields[6], 10);
+      var tripsConcept = tripsOnt[tripsJsTree.get_selected()[0].replace(/^ont__/, '')]
+      var yourConcept = yourOntById[yourJsTree.get_selected()[0]];
+      var tripsRole = tripsConcept.dynamic_sem_frame[tripsRoleIndex];
+      var yourRole = yourConcept.roles[yourRoleIndex];
+      var tripsRolePath;
+      if (pathIndex !== undefined) {
+	tripsRolePath = tripsRole.paths[pathIndex];
+      }
+      var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept, 'error');
+      var roleMapping =
+        conceptMapping.roleMappings.find(function(m) {
+	  return (tripsRole.roles.includes(m.tripsRole.roles[0]) &&
+	          tripsRolePath === m.tripsRolePath &&
+		  yourRole === m.yourRole);
+	});
+      if (this.checked) {
+	roleMapping.optional = true;
+	line.addClass('optional');
+      } else {
+	delete roleMapping.optional;
+	line.removeClass('optional');
+      }
+    }
+  });
 
   $(window).resize(function(evt) {
     // update all the things
@@ -2279,6 +2332,9 @@ $(function() {
 	      }
 	      return repStep;
 	    });
+	    if (rm.optional) {
+	      repPath.unshift('optional');
+	    }
 	    if ('yourRole' in rm) {
 	      repPath.push(rm.yourRole.name);
 	    }
@@ -2530,12 +2586,20 @@ $(function() {
 		if (repPath.length == 0) {
 		  fail('expected rolePathMapping to have more than just your role name as an element');
 		}
+		var optional = false;
+		if (repPath[0] === 'optional') {
+		  optional = true;
+		  repPath.shift();
+		}
+		if (repPath.length == 0) {
+		  fail('expected rolePathMapping to have more than just "optional" and your role name as elements');
+		}
 		if (yourRoleName === undefined &&
 		    repPath[repPath.length-1].fillerType !== 'nil') {
 		  fail('expected rolePathMapping with no your role name to end with a fillerType of nil');
 		}
 		if (!('role' in repPath[0])) {
-		  fail('expected rolePathMapping to start with a trips role');
+		  fail('expected rolePathMapping to start with a trips role (possibly after "optional")');
 		}
 		var tripsRoleName = repPath[0].role;
 		if (!(('string' === typeof tripsRoleName) &&
@@ -2568,6 +2632,9 @@ $(function() {
 		  tripsRole: tripsRole,
 		  yourConcept: yourConcept
 		};
+		if (optional) {
+		  roleMapping.optional = true;
+		}
 		if (yourRoleName !== undefined) {
 		  roleMapping.yourRole =
 		    roles.find(function(r) { return r.name === yourRoleName });

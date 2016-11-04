@@ -80,6 +80,8 @@ public class ReadOntologyMapperSaveFile {
 		  System.out.println(fillerType);
 		}
 	      } else {
+		// NOTE: at the end, this is your role name; at the beginning
+		// it can only be "optional"
 		String role = (String)stepObject;
 		System.out.println(role);
 	      }
