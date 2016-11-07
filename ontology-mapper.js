@@ -2990,6 +2990,11 @@ $(function() {
     reader.readAsText(file);
   });
 
+  $('#build').on('click', function(evt) {
+    alert('building rules is not yet implemented');
+    return false;
+  });
+
   /*
    * hide unfilled details until something happens
    */

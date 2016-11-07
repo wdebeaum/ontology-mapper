@@ -32,6 +32,10 @@ h1, h2, h3 {
   background-color: #ccc;
 }
 
+#window-heading td:nth-child(2) {
+  text-align: center;
+}
+
 #trees td, #details td {
   height: calc(50vh - 3em - 3px);
   vertical-align: top;
@@ -133,7 +137,7 @@ td.map svg {
   border-radius: 0px;
 }
 
-button, #select-concept-mapping-button {
+button, input[type=submit], #select-concept-mapping-button {
   border-style: outset;
   border-width: 2px;
   border-color: #ddd;
@@ -144,7 +148,7 @@ button:active, #select-concept-mapping-button:active {
   border-style: inset;
 }
 
-input {
+input[type=text] {
   border: 1px solid black;
   padding: 1px;
 }
