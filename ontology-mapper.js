@@ -487,7 +487,8 @@ $(function() {
 	  throw new Error('WTF');
       }
       // if there is a concept mapping selected, also show other mapped TRIPS
-      // concepts with selected mapping lines
+      // concepts with selected mapping lines, and move any role mapping lines
+      // for it to the front
       // FIXME this is a little redundant with some code in the 'role' case
       // above
       var tripsIDs = tripsJsTree.get_selected();
@@ -503,6 +504,7 @@ $(function() {
 	  conceptMapping.tripsConcepts.forEach(function(tc) {
 	    $('#ont__' + tc.name + '__to__' + yourID).addClass('selected');
 	  });
+	  raiseRoleMappingLines();
 	}
       }
     } else if (opts.scroll) {
@@ -1584,6 +1586,25 @@ $(function() {
   /*
    * select/add/remove concept mapping
    */
+
+  function raiseRoleMappingLines() {
+    console.log('raise role mapping lines');
+    var conceptMappingIndex = $('#select-concept-mapping')[0].selectedIndex;
+    $('.from-concept-mapping-' + conceptMappingIndex).
+    each(function(i, l) {
+      var line = $(l);
+      var className = line.attr('class');
+      line.attr('class',
+        className.replace(/\bfrom-concept-mapping-(\d+)\b/g, function(c, i) {
+	  if (parseInt(i, 10) != conceptMappingIndex) {
+	    return '';
+	  } else {
+	    return c;
+	  }
+	})
+      );
+    });
+  }
 
   function updateRoleMapHeading() {
     var roleMapHeading = $('#details-heading td.map');
