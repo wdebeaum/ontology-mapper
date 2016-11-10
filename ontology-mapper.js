@@ -376,43 +376,6 @@ $(function() {
 	    var yourID = yourIDs[0];
 	    var tripsConcept = tripsOnt[tripsID.replace(/^ont__/,'')];
 	    var yourConcept = yourOntById[yourID];
-/*	    var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept);
-	    if (conceptMapping !== undefined) {
-	      var conceptMappingIndex =
-	        $('#select-concept-mapping')[0].selectedIndex;
-	      var lineClass = 'from-concept-mapping-' + conceptMappingIndex;
-	      conceptLine = $('#' + tripsID + '__to__' + yourID);
-	      selectLi(conceptLine);
-	      conceptMapping.roleMappings.forEach(function(m) {
-		var tripsRoleIndex =
-		  tripsConcept.dynamic_sem_frame.findIndex(function(tripsRole) {
-		    return tripsRole.roles.includes(m.tripsRole.roles[0]);
-		  });
-		var yourRoleIndex =
-		  (('yourRole' in m) ?
-		    yourConcept.roles.findIndex(function(r) {
-		      return r.name === m.yourRole.name;
-		    })
-		    : -1);
-		var tripsRoleID = 'trips-role-' + tripsRoleIndex;
-		if (m.tripsRolePath) {
-		  var tripsRolePathIndex =
-		    m.tripsRole.paths.findIndex(function(path) {
-		      return path.every(function(rStep, i) {
-			mStep = m.tripsRolePath[i];
-			return (mStep.role === rStep.role &&
-				mStep.fillerType === rStep.fillerType);
-		      });
-		    });
-		  tripsRoleID = 'path-' + tripsRolePathIndex + '-of-' + tripsRoleID;
-		}
-		if (yourRoleIndex >= 0) {
-		  var yourRoleID = 'your-role-' + yourRoleIndex;
-		  m.line = addLine(linesG, tripsRoleID, yourRoleID);
-		  m.line.addClass(lineClass);
-		}
-	      });
-	    }*/
 	    var selectedConceptMappingIndex =
 	      $('#select-concept-mapping')[0].selectedIndex;
 	    var conceptMappingIndex = 0;
@@ -440,22 +403,10 @@ $(function() {
 		  if (m.tripsRolePath) {
 		    var tripsRole =
 		      tripsConcept.dynamic_sem_frame[tripsRoleIndex];
-/*		    // prefer path reference equality*/
 		    var tripsRolePathIndex =
 		      tripsRole.paths.findIndex(function(path) {
 			return path === m.tripsRolePath;
 		      });
-/*		    // fall back to deep-ish equality if that fails
-		    // FIXME is this actually necessary?
-		    if (tripsRolePathIndex < 0) {
-		      tripsRole.paths.findIndex(function(path) {
-			return path.every(function(rStep, i) {
-			  mStep = m.tripsRolePath[i];
-			  return (mStep.role === rStep.role &&
-				  mStep.fillerType === rStep.fillerType);
-			});
-		      });
-		    }*/
 		    if (tripsRolePathIndex < 0) {
 		      throw new Error('WTF');
 		    }
@@ -1036,40 +987,6 @@ $(function() {
     }
   }
 
-/*  function addRolesAndPathsFromSelectedMapping(concept) {
-    concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
-      roleRestrMap.paths = [];
-    });
-    var yourIDs = yourJsTree.get_selected();
-    if (yourIDs.length == 1) {
-      var yourID = yourIDs[0];
-      var yourConcept = yourOntById[yourID];
-      var conceptMapping = selectedConceptMapping(concept, yourConcept);
-      if (conceptMapping !== undefined) {
-	conceptMapping.roleMappings.forEach(function(m) {
-	  if (m.tripsRole.added) {
-	    concept.dynamic_sem_frame.push(m.tripsRole);
-	  } else {
-	    var roleName = m.tripsRole.roles[0];
-	    var tripsRole =
-	      concept.dynamic_sem_frame.
-	      find(function(roleRestrMap) {
-		return roleRestrMap.roles.includes(roleName);
-	      });
-	    if (tripsRole === undefined) {
-	      // TODO check for this case earlier so it never happens here, and
-	      // then make this throw an error
-	      console.warn('selected trips concept ' + concept.name + ' is missing role from selected concept mapping ' + roleName + '; dropped');
-	    } else if ('tripsRolePath' in m &&
-		       !tripsRole.paths.includes(m.tripsRolePath)) {
-	      tripsRole.paths.push(m.tripsRolePath);
-	    }
-	  }
-	});
-      }
-    }
-  }*/
-
   function addRolesAndPathsFromAllMappings(concept) {
     concept.dynamic_sem_frame.forEach(function(roleRestrMap) {
       roleRestrMap.paths = [];
@@ -1192,7 +1109,6 @@ $(function() {
 
   function showTripsRoles(concept) {
     applyTripsInheritance(concept);
-    //addRolesAndPathsFromSelectedMapping(concept);
     addRolesAndPathsFromAllMappings(concept);
     showOtherMappedTripsConcepts(concept); // not roles, but whatever
     var sem_feats = concept.dynamic_sem_feats;
@@ -1222,18 +1138,13 @@ $(function() {
 		    (('fillerType' in step) ? step.fillerType : ''));
 	  }).join(' ');
 	var pathLi;
-/*	if (path.inherited) { // FIXME is this case necessary anymore?
-	  pathLi = addLiBeforeTemplate(li.children('ul'), '.inherited');
-	  pathLi.text(pathStr);
-	} else {*/
-	  pathLi = addLiBeforeTemplate(li.children('ul'), '.own');
-	  pathLi.children('input').val(pathStr);
-	  var input = pathLi.children('input');
-	  input.autocomplete({
-	    source: autocompleteTripsRolePath,
-	    change: changeTripsRolePath
-	  });
-/*	}*/
+	pathLi = addLiBeforeTemplate(li.children('ul'), '.own');
+	pathLi.children('input').val(pathStr);
+	var input = pathLi.children('input');
+	input.autocomplete({
+	  source: autocompleteTripsRolePath,
+	  change: changeTripsRolePath
+	});
 	pathLi.attr('id', pathLi.attr('id').replace(/template/, roleIndex));
 	pathLi.attr('from-concept-mappings', Object.keys(path.fromConceptMappings).join(' '));
       });
@@ -2212,7 +2123,6 @@ $(function() {
       var yourIDs = yourJsTree.get_selected();
       if (yourIDs.length != 1) { throw new Error('WTF'); }
       var yourConcept = yourOntById[yourIDs[0]];
-      //var conceptMapping = selectedConceptMapping(concept, yourConcept, 'error');
       yourConcept.conceptMappings.forEach(function(conceptMapping) {
 	conceptMapping.roleMappings =
 	  conceptMapping.roleMappings.filter(function(m) {
@@ -2268,7 +2178,6 @@ $(function() {
       var yourIDs = yourJsTree.get_selected();
       if (yourIDs.length != 1) { throw new Error('WTF'); }
       var yourConcept = yourOntById[yourIDs[0]];
-      //var conceptMapping = selectedConceptMapping(concept, yourConcept, 'error');
       yourConcept.conceptMappings.forEach(function(conceptMapping) {
 	if (conceptMapping.tripsConcepts.includes(concept)) {
 	  conceptMapping.roleMappings =
@@ -2546,7 +2455,6 @@ $(function() {
     var allWords = [];
     // reset extra stuff in tripsOnt
     for (var name in tripsOnt) {
-      /*tripsOnt[name].roleMappings = [];*/
       delete tripsOnt[name].dynamic_sem_feats;
       delete tripsOnt[name].dynamic_sem_frame;
     }
