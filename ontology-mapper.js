@@ -1588,7 +1588,6 @@ $(function() {
    */
 
   function raiseRoleMappingLines() {
-    console.log('raise role mapping lines');
     var conceptMappingIndex = $('#select-concept-mapping')[0].selectedIndex;
     $('.from-concept-mapping-' + conceptMappingIndex).
     each(function(i, l) {
