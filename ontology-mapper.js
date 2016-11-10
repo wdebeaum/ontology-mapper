@@ -413,11 +413,12 @@ $(function() {
 		}
 	      });
 	    }*/
+	    var selectedConceptMappingIndex =
+	      $('#select-concept-mapping')[0].selectedIndex;
 	    var conceptMappingIndex = 0;
 	    yourConcept.conceptMappings.forEach(function(conceptMapping) {
 	      if (conceptMapping.tripsConcepts.includes(tripsConcept)) {
 		var lineClass = 'from-concept-mapping-' + conceptMappingIndex;
-		conceptMappingIndex++;
 		conceptLine = $('#' + tripsID + '__to__' + yourID);
 		selectLi(conceptLine);
 		conceptMapping.roleMappings.forEach(function(m) {
@@ -475,7 +476,8 @@ $(function() {
 		    }
 		    m.line = addLine(linesG, tripsRoleID, yourRoleID);
 		    m.line.addClass(lineClass);
-		    if (m.optional) {
+		    if (m.optional &&
+		        conceptMappingIndex == selectedConceptMappingIndex) {
 		      m.line.addClass('optional');
 		    }
 		    if ($('#' + tripsRoleID).hasClass('selected') &&
@@ -484,6 +486,7 @@ $(function() {
 		    }
 		  }
 		});
+		conceptMappingIndex++;
 	      }
 	    });
 	  }
