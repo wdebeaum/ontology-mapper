@@ -307,6 +307,24 @@ $(function() {
     var linesG = $('#' + conceptOrRole + '-lines');
     if (opts.openClose) {
       linesG.empty();
+      // if a pair of single concepts is selected, fill selected with an object
+      // full of common vars (to protect them from being overwritten by other
+      // uses thereof)
+      var selected;
+      var tripsIDs = tripsJsTree.get_selected();
+      var yourIDs = yourJsTree.get_selected();
+      if (tripsIDs.length == 1 && yourIDs.length == 1) {
+	selected = {
+	  tripsID: tripsIDs[0],
+	  yourID: yourIDs[0]
+	};
+	selected.tripsConcept = tripsOnt[selected.tripsID.replace(/^ont__/,'')];
+	selected.yourConcept = yourOntById[selected.yourID];
+	// NOTE: this may still be undefined if there are no concept mappings
+	// for this pair of concepts
+	selected.conceptMapping =
+	  selectedConceptMapping(selected.tripsConcept, selected.yourConcept);
+      }
       switch (conceptOrRole) {
 	case 'concept':
 	  for (var yourID in yourOntById) {
@@ -368,41 +386,37 @@ $(function() {
 	  }
 	  break;
 	case 'role':
-	  var tripsIDs = tripsJsTree.get_selected();
-	  var yourIDs = yourJsTree.get_selected();
 	  var conceptLine;
-	  if (tripsIDs.length == 1 && yourIDs.length == 1) {
-	    var tripsID = tripsIDs[0];
-	    var yourID = yourIDs[0];
-	    var tripsConcept = tripsOnt[tripsID.replace(/^ont__/,'')];
-	    var yourConcept = yourOntById[yourID];
-	    var selectedConceptMappingIndex =
-	      $('#select-concept-mapping')[0].selectedIndex;
+	  if (selected !== undefined) {
 	    var conceptMappingIndex = 0;
-	    yourConcept.conceptMappings.forEach(function(conceptMapping) {
-	      if (conceptMapping.tripsConcepts.includes(tripsConcept)) {
+	    selected.yourConcept.conceptMappings.
+	    forEach(function(conceptMapping) {
+	      if (conceptMapping.tripsConcepts.
+		  includes(selected.tripsConcept)) {
 		var lineClass = 'from-concept-mapping-' + conceptMappingIndex;
-		conceptLine = $('#' + tripsID + '__to__' + yourID);
+		conceptMappingIndex++;
+		conceptLine =
+		  $('#' + selected.tripsID + '__to__' + selected.yourID);
 		selectLi(conceptLine);
 		conceptMapping.roleMappings.forEach(function(m) {
 		  var tripsRoleIndex =
-		    tripsConcept.dynamic_sem_frame.
+		    selected.tripsConcept.dynamic_sem_frame.
 		    findIndex(function(tripsRole) {
 		      return tripsRole.roles.includes(m.tripsRole.roles[0]);
 		    });
 		  if (tripsRoleIndex < 0) {
 		    throw new Error('WTF');
 		  }
+		  var tripsRole =
+		    selected.tripsConcept.dynamic_sem_frame[tripsRoleIndex];
 		  var yourRoleIndex =
 		    (('yourRole' in m) ?
-		      yourConcept.roles.findIndex(function(r) {
+		      selected.yourConcept.roles.findIndex(function(r) {
 			return r.name === m.yourRole.name;
 		      })
 		      : -1);
 		  var tripsRoleID = 'trips-role-' + tripsRoleIndex;
 		  if (m.tripsRolePath) {
-		    var tripsRole =
-		      tripsConcept.dynamic_sem_frame[tripsRoleIndex];
 		    var tripsRolePathIndex =
 		      tripsRole.paths.findIndex(function(path) {
 			return path === m.tripsRolePath;
@@ -416,7 +430,7 @@ $(function() {
 		  if (yourRoleIndex >= 0) {
 		    var yourRoleID = 'your-role-' + yourRoleIndex;
 		    if (m.yourRoleFiller) {
-		      var yourRole = yourConcept.roles[yourRoleIndex];
+		      var yourRole = selected.yourConcept.roles[yourRoleIndex];
 		      var yourRoleFillerIndex =
 		        yourRole.fillers.indexOf(m.yourRoleFiller);
 		      if (yourRoleFillerIndex < 0) {
@@ -427,8 +441,32 @@ $(function() {
 		    }
 		    m.line = addLine(linesG, tripsRoleID, yourRoleID);
 		    m.line.addClass(lineClass);
+		    // if this role mapping is marked optional, and it's either
+		    // part of the selected concept mapping, or there are no
+		    // other role mappings in other concept mappings that are
+		    // identical to this role mapping except not marked
+		    // optional, then add the 'optional' class to the line
 		    if (m.optional &&
-		        conceptMappingIndex == selectedConceptMappingIndex) {
+		        (conceptMapping === selected.conceptMapping ||
+			 ! selected.yourConcept.conceptMappings.
+			   some(function(cm) {
+			     return (
+			       cm !== conceptMapping &&
+			       cm.tripsConcepts.
+			       includes(selected.tripsConcept) &&
+			       cm.roleMappings.some(function(rm) {
+				 return (
+				   (!rm.optional) &&
+				   tripsRole.roles.includes(
+				       rm.tripsRole.roles[0]) &&
+				   m.tripsRolePath === rm.tripsRolePath &&
+				   m.yourRole.name === rm.yourRole.name &&
+				   m.yourRoleFiller === rm.yourRoleFiller
+				 );
+			       })
+			     );
+			   })
+			 )) {
 		      m.line.addClass('optional');
 		    }
 		    if ($('#' + tripsRoleID).hasClass('selected') &&
@@ -437,7 +475,6 @@ $(function() {
 		    }
 		  }
 		});
-		conceptMappingIndex++;
 	      }
 	    });
 	  }
@@ -451,23 +488,12 @@ $(function() {
       // if there is a concept mapping selected, also show other mapped TRIPS
       // concepts with selected mapping lines, and move any role mapping lines
       // for it to the front
-      // FIXME this is a little redundant with some code in the 'role' case
-      // above
-      var tripsIDs = tripsJsTree.get_selected();
-      var yourIDs = yourJsTree.get_selected();
-      var conceptLine;
-      if (tripsIDs.length == 1 && yourIDs.length == 1) {
-	var tripsID = tripsIDs[0];
-	var yourID = yourIDs[0];
-	var tripsConcept = tripsOnt[tripsID.replace(/^ont__/,'')];
-	var yourConcept = yourOntById[yourID];
-	var conceptMapping = selectedConceptMapping(tripsConcept, yourConcept);
-	if (conceptMapping !== undefined) {
-	  conceptMapping.tripsConcepts.forEach(function(tc) {
-	    $('#ont__' + tc.name + '__to__' + yourID).addClass('selected');
-	  });
-	  raiseRoleMappingLines();
-	}
+      if (selected !== undefined && selected.conceptMapping !== undefined) {
+	selected.conceptMapping.tripsConcepts.forEach(function(tc) {
+	  $('#ont__' + tc.name + '__to__' + selected.yourID).
+	  addClass('selected');
+	});
+	raiseRoleMappingLines();
       }
     } else if (opts.scroll) {
       linesG.children().each(function(i, line) {
@@ -1821,6 +1847,8 @@ $(function() {
 		    yourRole === m.yourRole &&
 		    yourRoleFiller === m.yourRoleFiller);
 	  });
+	// FIXME? this WTF can happen if the user tries to remove a role
+	// mapping from a non-selected concept mapping
 	if (i < 0) { throw new Error('WTF'); }
 	var mapping = conceptMapping.roleMappings.splice(i, 1)[0];
 	mapping.line.remove();
