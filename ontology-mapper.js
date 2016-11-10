@@ -439,7 +439,14 @@ $(function() {
 		  if (m.tripsRolePath) {
 		    var tripsRole =
 		      tripsConcept.dynamic_sem_frame[tripsRoleIndex];
+/*		    // prefer path reference equality*/
 		    var tripsRolePathIndex =
+		      tripsRole.paths.findIndex(function(path) {
+			return path === m.tripsRolePath;
+		      });
+/*		    // fall back to deep-ish equality if that fails
+		    // FIXME is this actually necessary?
+		    if (tripsRolePathIndex < 0) {
 		      tripsRole.paths.findIndex(function(path) {
 			return path.every(function(rStep, i) {
 			  mStep = m.tripsRolePath[i];
@@ -447,6 +454,7 @@ $(function() {
 				  mStep.fillerType === rStep.fillerType);
 			});
 		      });
+		    }*/
 		    if (tripsRolePathIndex < 0) {
 		      throw new Error('WTF');
 		    }
@@ -1211,13 +1219,18 @@ $(function() {
 		    (('fillerType' in step) ? step.fillerType : ''));
 	  }).join(' ');
 	var pathLi;
-	if (path.inherited) {
+/*	if (path.inherited) { // FIXME is this case necessary anymore?
 	  pathLi = addLiBeforeTemplate(li.children('ul'), '.inherited');
 	  pathLi.text(pathStr);
-	} else {
+	} else {*/
 	  pathLi = addLiBeforeTemplate(li.children('ul'), '.own');
 	  pathLi.children('input').val(pathStr);
-	}
+	  var input = pathLi.children('input');
+	  input.autocomplete({
+	    source: autocompleteTripsRolePath,
+	    change: changeTripsRolePath
+	  });
+/*	}*/
 	pathLi.attr('id', pathLi.attr('id').replace(/template/, roleIndex));
 	pathLi.attr('from-concept-mappings', Object.keys(path.fromConceptMappings).join(' '));
       });
