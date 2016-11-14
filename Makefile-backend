@@ -1,0 +1,38 @@
+INSTALL_DIR=/Library/WebServer/Documents/ontology-mapper
+RULES_DIR=/Users/wbeaumont/extraction-rules
+JSON_SIMPLE_VERSION=1.1.1
+download=curl -O -L $(1)
+JAVA=/usr/bin/java
+JAVAC=javac
+
+JAVA_MAIN = ExtractionMapper.java
+CGI = build.pl
+CLASSES = \
+	ExtractionMapper.class \
+	ExtractionMapper$$1.class \
+	ExtractionMapper$$RoleMap.class \
+	ExtractionMapper$$RuleParams.class
+
+all: download $(JAVA_MAIN)
+	$(JAVAC) -cp .:json-simple.jar $(JAVA_MAIN)
+
+install: all $(CGI)
+	mkdir -p $(INSTALL_DIR)
+	cp $(CLASSES) json-simple.jar $(INSTALL_DIR)/
+	sed -e "s@my $$JAVA = '/usr/bin/java'@my $$JAVA = '$(JAVA)@; \
+		s@my $$RULES_DIR = '.'@my $$RULES_DIR = '$(RULES_DIR)'@" \
+	< $(CGI) \
+	> $(INSTALL_DIR)/$(CGI)
+
+download: json-simple.jar
+
+json-simple.jar:
+	$(call download,http://central.maven.org/maven2/com/googlecode/json-simple/json-simple/$(JSON_SIMPLE_VERSION)/json-simple-$(JSON_SIMPLE_VERSION).jar)
+	mv json-simple-$(JSON_SIMPLE_VERSION).jar $@
+
+clean:
+	rm -f $(CLASSES)
+
+distclean: clean
+	rm -f json-simple.jar
+

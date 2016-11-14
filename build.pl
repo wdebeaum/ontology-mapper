@@ -7,8 +7,8 @@ use IO::Select;
 
 use strict vars;
 
-my $JAVA = "/usr/bin/java";
-my $RULES_DIR = ".";
+my $JAVA = '/usr/bin/java';
+my $RULES_DIR = '.';
 
 my $q = CGI->new;
 eval {
