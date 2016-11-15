@@ -64,6 +64,11 @@ eval {
     open FH, ">$RULES_DIR/$filename" or die "Can't open output file $filename";
     print FH $lisp;
     close FH;
+  # otherwise, still set the filename for the Content-Disposition header
+  } elsif ($json =~ /"ontologyPrefix": "([\w-]+)(::)?"/) {
+    $filename = lc($1) . "RuleSet.lisp";
+  } else {
+    $filename = 'RuleSet.lisp';
   }
   # send lisp to client
   print $q->header(
