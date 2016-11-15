@@ -1,7 +1,7 @@
 $(function() {
   var DSL_DATA_PATH = 'dsl/';
-  var COLONS_OR_UNDERSCORE = '::'; // for original URCS files
-  //var COLONS_OR_UNDERSCORE = '_'; // for flaming-tyrion files
+  //var COLONS_OR_UNDERSCORE = '::'; // for original URCS files
+  var COLONS_OR_UNDERSCORE = '_'; // for flaming-tyrion files
 
   /*
    * XSL transforms for making the TRIPS tree, etc.

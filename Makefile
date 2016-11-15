@@ -1,5 +1,5 @@
-INSTALL_DIR=/u/www/research/trips/lexicon/ontology-mapper
-DSL_DATA_PATH=../dsl/
+INSTALL_DIR=/Library/WebServer/Documents/ontology-mapper
+DSL_DATA_PATH=../flaming-tyrion/lexicon/dsl/
 JQUERY_VERSION=3.1.1
 JSTREE_VERSION=3.3.2
 JQUERY_UI_VERSION=1.12.1
