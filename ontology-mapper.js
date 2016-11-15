@@ -2963,8 +2963,10 @@ $(function() {
   });
 
   $('#build').on('click', function(evt) {
-    alert('building rules is not yet implemented');
-    return false;
+    $('#build-input-data').val(
+      JSON.stringify(savableRepresentation(), null, "\t")
+    );
+    return true; // keep submitting form
   });
 
   /*

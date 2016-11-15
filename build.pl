@@ -68,7 +68,8 @@ eval {
   # send lisp to client
   print $q->header(
     -type => 'text/plain', # Lisp predates MIME types
-    -charset => 'UTF-8'
+    -charset => 'UTF-8',
+    -'Content-Disposition' => 'attachment; filename="' + $filename + '"'
   ), $lisp;
   1;
 # if there were any errors, report them to the client as a server error

@@ -173,13 +173,13 @@ var {
  <li>Role mapping lines for different concept mappings for the same pair of concepts are color-coded and displayed together.
  <li>Word counts next to each concept show how many words under that concept are also under the selected concept on the other side.
  <li>Inheritance of original TRIPS roles and their restrictions, and of your roles (inherited things are gray instead of black).
+ <li>Build Lisp mapping rules for use in TRIPS, optionally posting them for anyone to use with the web parsers.
 </ul>
 
 <h4>Planned Features</h4>
 <ul>
  <li>Display mappings between TRIPS concepts and WordNet senses in the TRIPS concept details, and use them as extra words for the word count feature.
  <li>Extend mapping lines into tree views, up to the name of the concept.
- <li>Build Lisp mapping rules for use in TRIPS.
 </ul>
 
 <h3>Known Bugs</h3>
@@ -195,7 +195,7 @@ var {
 <p>The interface is divided into a grid of three sections horizontally by two sections vertically, like this:</p>
 <table>
 <tr><th rowspan="2" class="meta top left"></th><th colspan="2" class="meta top">TRIPS ontology</th><th class="meta top">mappings</th><th colspan="2" class="meta top">your ontology</th></tr>
-<tr><th colspan="3">Ontology Builder/Mapper (<a href="#">help</a>)</th><th><button>load</button> <button>save</button> prefix: <span class="input">your prefix</span></th><th>concept: <button>+</button> <button>-</button></th></tr>
+<tr><th colspan="2">Ontology Builder/Mapper (<a href="#">help</a>)</th><th><button>build rules</button> <input type="checkbox" checked> post</th><th><button>load</button> <button>save</button> prefix: <span class="input">your prefix</span></th><th>concept: <button>+</button> <button>-</button></th></tr>
 <tr><th rowspan="2" class="meta left">trees</th><th>TRIPS ontology</th><td>search for concept</td><th>map: <button>+</button> <button>-</button> <select><option>1</option></select></th><th>Your ontology</th><td>search for concept</td></tr>
 <tr><td colspan="2" class="pane">[TRIPS tree view]</td><td class="pane">[concept mappings]</td><td colspan="2" class="pane">[your tree view]</td></tr>
 <tr><th rowspan="2" class="meta left">details/roles</th><th colspan="2">TRIPS concept details</th><th>map: <button>+</button> <button>-</button></th><th colspan="2">Your concept details</th></tr>
@@ -251,7 +251,9 @@ var {
 
 <p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). (Safari and IE users: this might just open the file in the browser instead, so you will then have to use your browser's "save as" function, and save only the page source and not a web archive/complete webpage. IE users: upgrade to Edge. Safari users: complain to Apple and tell them to implement the <code>download</code> attribute.) Click the <button>load</button> button to the left of the <button>save</button> button to load such a file back into the page.</p>
 
-<p>If you want a prefix to be added to all the concept and role names in your ontology, enter it in the box labeled "prefix" to the right of the <button>save</button> button before saving. This is useful for adding a Lisp package to these symbols, for example entering "foo::" in this field will put all symbols in the "foo" package. The prefix won't otherwise show up in the GUI, to avoid clutter.</p>
+<p>If you want a prefix to be added to all the concept and role names in your ontology, enter it in the box labeled "prefix" to the right of the <button>save</button> button before saving. This is useful for adding a Lisp package to these symbols, for example entering "foo::" (or "foo"; the "::" will be added) in this field will put all symbols in the "foo" package. The prefix won't otherwise show up in the GUI, to avoid clutter.</p>
+
+<p>Click the <button>build rules</button> button at the top middle to build a set of extraction rules in the Lisp format usable by TRIPS. If you leave the "post" checkbox next to it checked, your rule set will be made available to the TRIPS web parsers, for anyone to use. Either way, submitting the form will download the Lisp file to your computer. The file will be named using the prefix followed by "RuleSet.lisp", so the prefix must be specified, and must only contain letters, digits, underscores, and hyphens (with an optional "::" suffix, which will be removed for the filename).</p>
 
 <h2>JSON Save Format</h2>
 <p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code> and <code>"fillerType"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept. Note that the first element of <code>"rolePathMappings"</code> below is an example of a normal mapped role, while the second is an example of a "nil" role filler type, which is not mapped to one of your roles. The presence of <code>"optional"</code> at the start of the first indicates that the role mapping is optional, its absence would indicate that the role mapping is required. The first role mapping is also an example of a mapping to a filler value of one of your roles, because it ends with <code>"<var>your role filler value</var>"</code>. Mappings directly to one of your roles only have one string at the end, <code>"<var>your role name</var>"</code>. Paths ending with a step with <code>"fillerType": "nil"</code> are never optional, and never have your role name or your role filler value (because they aren't mapped).</p>
