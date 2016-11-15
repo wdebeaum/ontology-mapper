@@ -9,9 +9,9 @@ JAVA_MAIN = ExtractionMapper.java
 CGI = build.pl
 CLASSES = \
 	ExtractionMapper.class \
-	ExtractionMapper$$1.class \
-	ExtractionMapper$$RoleMap.class \
-	ExtractionMapper$$RuleParams.class
+	ExtractionMapper\$$1.class \
+	ExtractionMapper\$$RoleMap.class \
+	ExtractionMapper\$$RuleParams.class
 
 all: download $(JAVA_MAIN)
 	$(JAVAC) -cp .:json-simple.jar $(JAVA_MAIN)
@@ -19,10 +19,12 @@ all: download $(JAVA_MAIN)
 install: all $(CGI)
 	mkdir -p $(INSTALL_DIR)
 	cp $(CLASSES) json-simple.jar $(INSTALL_DIR)/
-	sed -e "s@my $$JAVA = '/usr/bin/java'@my $$JAVA = '$(JAVA)@; \
-		s@my $$RULES_DIR = '.'@my $$RULES_DIR = '$(RULES_DIR)'@" \
+	sed -e "s@my \$$JAVA = '/usr/bin/java'@my \$$JAVA = '$(JAVA)'@; \
+		s@my \$$RULES_DIR = '.'@my \$$RULES_DIR = '$(RULES_DIR)'@" \
 	< $(CGI) \
 	> $(INSTALL_DIR)/$(CGI)
+	chmod 0755 $(INSTALL_DIR)/$(CGI)
+	cp dot-htaccess $(INSTALL_DIR)/.htaccess
 
 download: json-simple.jar
 

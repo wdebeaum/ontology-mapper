@@ -29,7 +29,7 @@ eval {
   # run ExtractionMapper, writing $json on stdin, and reading stderr and stdout
   my ($chld_in, $chld_out, $chld_err) = (gensym, gensym, gensym);
   my $pid = open3($chld_in, $chld_out, $chld_err,
-    $JAVA, qw(-cp .:json-simple-1.1.1.jar ExtractionMapper));
+    $JAVA, qw(-cp .:json-simple.jar ExtractionMapper));
   my $s = IO::Select->new();
   $s->add($chld_out);
   $s->add($chld_err);
