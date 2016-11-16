@@ -2173,9 +2173,14 @@ $(function() {
   window.inputTripsRoleName = function(evt) {
     var id = tripsJsTree.get_selected()[0];
     var concept = tripsOnt[id.replace(/^ont__/,'')];
+    var newName = $(evt.currentTarget).val().replace(/^:/, '');
+    if (concept.dynamic_sem_frame.some(function(roleRestrMap) {
+          return roleRestrMap.roles.includes(newName);
+	})) {
+      alert('Warning: there is already a :' + newName + ' role');
+    }
     var i = $(evt.currentTarget).parent().index();
-    concept.dynamic_sem_frame[i].roles =
-      [$(evt.currentTarget).val().replace(/^:/, '')];
+    concept.dynamic_sem_frame[i].roles = [newName];
   };
 
   function remTripsRole(evt) {
