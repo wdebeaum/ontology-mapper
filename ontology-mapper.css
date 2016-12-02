@@ -46,12 +46,16 @@ h1, h2, h3 {
   overflow: auto;
 }
 
-#details dd > input {
+#details dd > input[type=text] {
   width: calc(100% - 6em);
 }
 
-#details li > input {
+#details li > input[type=text] {
   width: calc(100% - 4em);
+}
+
+#your-roles > li > input[type=text] {
+  width: calc(100% - 15em);
 }
 
 #your-examples {

@@ -217,7 +217,8 @@ var {
 <p>Selected things are <span class="selected">highlighted in blue</span> (the cursor and the selection are separate, though they look similar; the cursor is <span class="cursor">lighter blue</span>). When exactly one concept is selected in the tree view, its details are displayed in the corresponding concept detail view:</p>
 <dl>
  <dt class="inline">name<dd><var>the name of the concept</var>
- <dt>comment<dd><var class="comment">comments about the concept</var>
+ <dt>comment<dd><var class="comment">comments about the concept</var><br>
+ <dt class="inline">is symbol<dd><input type="checkbox">
  <dt>roles<dd><ul class="selectable">
   <li>role/restriction 1
   <li class="selected">role/restriction 2
@@ -251,7 +252,7 @@ var {
 
 <p>There is a similar field you can add under one of your roles, but with slightly different semantics. It holds a single <em>value</em> (not a type, and not a path) to fill the role with instead of the value from the TRIPS side of the role mapping. For example, if you mapped the TRIPS path <code>color-val :value red</code> directly to your role <code>color-value</code>, it would end up being filled by the term of type <code>ONT::red</code>. But if you instead added the role filler value <code>red</code> under your role, and mapped to that, your role would be filled by that simple value rather than by the term.</p>
 
-<p>If you add several role filler types under a single TRIPS role, and mark all of their role mappings optional, it is taken to mean that only one of those role filler types may be used at a time. It is possible to avoid this interpretation by adding the same TRIPS role more than once, and putting each role filler type under a different instance of the TRIPS role. It's also possible to mix the two options. For example, you could add two <code>:mod</code> roles, adding color-related filler types to the first and size-related filler types to the second. Then only one size <code>:mod</code> and only one color <code>:mod</code> would be allowed, but you could still have both a size and a color. (This one-of restriction helps us make the rule engine fast while keeping the generated rule set small.)</p>
+<p>Another way to get simple values into your roles is by using symbol concepts. You can check the "is symbol" checkbox in a few of your concepts, and check the "filled by symbol" checkbox on one of your roles. Then instead of being filled by a term with one of your concepts as the type, the role will be filled by the concept name as a symbol. For example, suppose you create a concept named <code>crimson</code>, check its "is symbol" checkbox, and map <code>ONT::red</code> to it. Then for another concept mapping (say, <code>ONT::block</code> to <code>brick</code>) you add a role mapping from the TRIPS path <code>color-val</code> (<code>ONT::color-val</code> is an ancestor of <code>ONT::red</code>) on the <code>:mod</code> role to your role <code>color-value</code>, and check the "filled by symbol" checkbox next to <code>color-value</code>. Then a pair of LF terms like <code>(the v1 ONT::block :mod v2) (f v2 ONT::red)</code> would be transformed to something like <code>(the v1 brick :color-value crimson)</code>. Note that symbol concepts are not allowed to have roles, so when you check the "is symbol" checkbox any roles and role mappings you have defined for your concept will be deleted.</p>
 
 <p>Click the <button>save</button> button above your ontology to save your ontology and mappings to a file on your computer, in the JSON format (see below). (Safari and IE users: this might just open the file in the browser instead, so you will then have to use your browser's "save as" function, and save only the page source and not a web archive/complete webpage. IE users: upgrade to Edge. Safari users: complain to Apple and tell them to implement the <code>download</code> attribute.) Click the <button>load</button> button to the left of the <button>save</button> button to load such a file back into the page.</p>
 
@@ -260,7 +261,7 @@ var {
 <p>Click the <button>build rules</button> button at the top middle to build a set of extraction rules in the Lisp format usable by TRIPS. If you leave the "post" checkbox next to it checked, your rule set will be made available to the TRIPS web parsers, for anyone to use. Either way, submitting the form will download the Lisp file to your computer. The file will be named using the prefix followed by "RuleSet.lisp", so the prefix must be specified, and must only contain letters, digits, underscores, and hyphens (with an optional "::" suffix, which will be removed for the filename).</p>
 
 <h2>JSON Save Format</h2>
-<p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code>, <code>"fillerType"</code>, and <code>"roleId"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept. Note that the first element of <code>"rolePathMappings"</code> below is an example of a normal mapped role, while the second is an example of a "nil" role filler type, which is not mapped to one of your roles. The presence of <code>"optional"</code> at the start of the first indicates that the role mapping is optional, its absence would indicate that the role mapping is required. The first role mapping is also an example of a mapping to a filler value of one of your roles, because it ends with <code>"<var>your role filler value</var>"</code>. Mappings directly to one of your roles only have one string at the end, <code>"<var>your role name</var>"</code>. Paths ending with a step with <code>"fillerType": "nil"</code> are never optional, and never have your role name or your role filler value (because they aren't mapped). The <code>"roleId"</code> field may appear on the first step of a path, and distinguishes between different instances of the same TRIPS role in the same concept mapping.</p>
+<p>Shown below is the structure of the save file generated when you click the <button>save</button> button. Variables are <var>highlighted in green</var>. All fields are required except <code>"parent"</code> and <code>"fillerType"</code>, but some may be empty. If <code>"parent"</code> is omitted, the concept will be a top-level concept. Note that the first element of <code>"rolePathMappings"</code> below is an example of a normal mapped role, while the second is an example of a "nil" role filler type, which is not mapped to one of your roles. The presence of <code>"optional"</code> at the start of the first indicates that the role mapping is optional, its absence would indicate that the role mapping is required. The first role mapping is also an example of a mapping to a filler value of one of your roles, because it ends with <code>"<var>your role filler value</var>"</code>. Mappings directly to one of your roles only have one string at the end, <code>"<var>your role name</var>"</code>. Paths ending with a step with <code>"fillerType": "nil"</code> are never optional, and never have your role name or your role filler value (because they aren't mapped). Concepts with <code>"isSymbol": true</code> are symbol concepts, and should have empty <code>"roles"</code> and <code>"rolePathMappings"</code>.</p>
 
 <code><pre>
 {
@@ -268,6 +269,7 @@ var {
 	"ontologyPrefix": "<var>value you entered in the prefix field</var>",
 	"<var>your concept name</var>": {
 		"comment": "<var>comment</var>",
+		"isSymbol": <var>boolean</var>,
 		"mappings": [
 			{
 				"concepts": [
@@ -279,7 +281,6 @@ var {
 						"optional",
 						{
 							"role": "ont::<var>trips role name</var>",
-							"roleId": <var>integer</var>,
 							"fillerType": "ont::<var>trips concept name</var>"
 						},
 						<var>more steps (first step is required)...</var>
@@ -303,7 +304,10 @@ var {
 			<var>more concept mappings...</var>
 		],
 		"roles": [
-			"<var>your role name</var>"
+			{
+				"name": "<var>your role name</var>",
+				"filledBySymbol": <var>boolean</var>
+			},
 			<var>more roles...</var>
 		],
 		"words": [

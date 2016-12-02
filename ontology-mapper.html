@@ -227,15 +227,19 @@
      <dt class="inline"><label for="your-concept-name">name</label><dd>
      <input id="your-concept-name" type="text" required>
      <dt><label for="your-concept-comment">comment<dd>
-     <textarea class="comment" id="your-concept-comment"></textarea>
-     <dt>roles<dd>
+     <textarea class="comment" id="your-concept-comment"></textarea><br>
+     <dt class="inline"><label for="is-symbol">is symbol</label><dd>
+     <input id="is-symbol" type="checkbox"><br>
+     <dt id="your-roles-dt">roles<dd>
      <ul id="your-roles" class="selectable">
       <li class="template own" id="your-role-template" onclick="selectRole(event.currentTarget)"><input type="text" oninput="inputYourRole(event, 'name')" placeholder="role name" required>
+       <label>filled by symbol: <input type="checkbox" oninput="inputYourRole(event, 'filledBySymbol')"></label>
        <ul>
         <li id="filler-template-of-your-role-template" class="template own" onclick="selectRole(event.currentTarget); event.stopPropagation();" onchange="changeYourRoleFiller(event)"><input type="text" placeholder="your role filler value" required>
 	<li class="controls">role filler value to map to: <button onclick="addYourRoleFiller(event)">+</button> <button onclick="remYourRoleFiller(event)">-</button>
        </ul>
       <li class="template inherited" id="your-role-template" onclick="selectRole(event.currentTarget)">
+       <label>(filled by symbol: <input type="checkbox" oninput="inputYourRole(event, 'filledBySymbol')" disabled>)</label>
        <ul>
         <li id="filler-template-of-your-role-template" class="template own" onclick="selectRole(event.currentTarget); event.stopPropagation();" onchange="changeYourRoleFiller(event)"><input type="text" placeholder="your role filler value" required>
 	<li class="controls">role filler value to map to: <button onclick="addYourRoleFiller(event)">+</button> <button onclick="remYourRoleFiller(event)">-</button>
