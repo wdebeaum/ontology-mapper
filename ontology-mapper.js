@@ -1799,6 +1799,78 @@ $(function() {
    * add/remove role mapping
    */
 
+  /* Insert roleMapping into conceptMapping.roleMappings such that the order of
+   * the added TRIPS roles and paths in tripsConcept is preserved.
+   */
+  function insertRoleMapping(tripsConcept, conceptMapping, roleMapping) {
+    // iterate over dynamic_sem_frame and roleMappings simultaneously, keeping
+    // them aligned, until we reach roleMapping.tripsRole, or the end
+    var i = 0;
+    var j = 0;
+    var tripsRole;
+    for (; i < tripsConcept.dynamic_sem_frame.length; i++) {
+//      console.log({ dsf_i: i });
+      var tripsRole = tripsConcept.dynamic_sem_frame[i];
+      // attempt to advance to the beginning of the segment of roleMappings for
+      // this tripsRole; failing that, stay where we are
+      for (var k = j; k < conceptMapping.roleMappings.length; k++) {
+//	console.log({ k: k });
+	if (isTripsRoleFromMapping(tripsRole, conceptMapping.roleMappings[j])) {
+	  j = k;
+//	  console.log({ j: j });
+	  break;
+	}
+      }
+      if (isTripsRoleFromMapping(tripsRole, roleMapping)) { // found it!
+	break;
+      }
+    }
+//    console.log({ final_dsf_i: i, j: j });
+    if (i < tripsConcept.dynamic_sem_frame.length) { // found the role
+      if ('tripsRolePath' in roleMapping) {
+	// try to find the path
+	for (i = 0; i < tripsRole.paths.length; i++) {
+//	  console.log({ p_i: i });
+	  var path = tripsRole.paths[i];
+	  for (var k = j; k < conceptMapping.roleMappings.length; k++) {
+//	    console.log({ k: k });
+	    if (path === conceptMapping.roleMappings[j].tripsRolePath) {
+	      j = k;
+//	      console.log({ j: j });
+	      break;
+	    }
+	  }
+	  if (path === roleMapping.tripsRolePath) { // found it!
+	    break;
+	  }
+	}
+//	console.log({ final_p_i: i, j: j });
+	if (i < tripsRole.paths.length) { // found the path
+	  // find the end of the mappings for this path
+	  for (; j < conceptMapping.roleMappings.length; j++) {
+//	    console.log({ j: j });
+	    if (roleMapping.tripsRolePath !==
+	        conceptMapping.roleMappings[j].tripsRolePath) {
+	      break;
+	    }
+	  }
+	}
+      } else { // no path
+        // find the end of the no-path mappings for this role
+	for (; j < conceptMapping.roleMappings.length; j++) {
+//	  console.log({ j: j });
+	  var rm = conceptMapping.roleMappings[j]
+	  if ((!isTripsRoleFromMapping(tripsRole, rm)) ||
+	      'tripsRolePath' in rm) {
+	    break;
+	  }
+	}
+      }
+    }
+//    console.log({ final_j: j });
+    conceptMapping.roleMappings.splice(j, 0, roleMapping);
+  }
+
   function addRemRoleMapping(addOrRem, tripsLIs, yourLIs) {
     var tripsConceptID = tripsJsTree.get_selected()[0];
     var tripsConcept = tripsOnt[tripsConceptID.replace(/^ont__/,'')];
@@ -1850,7 +1922,7 @@ $(function() {
 	if (yourRoleFiller !== undefined) {
 	  mapping.yourRoleFiller = yourRoleFiller;
 	}
-	conceptMapping.roleMappings.push(mapping);
+	insertRoleMapping(tripsConcept, conceptMapping, mapping);
 	return mapping;
       case 'rem':
 	var i =
@@ -2086,7 +2158,7 @@ $(function() {
 	      return true;
 	    }
 	  });
-	conceptMapping.roleMappings.push({
+	insertRoleMapping(concept, conceptMapping, {
 	  tripsConcepts: conceptMapping.tripsConcepts,
 	  yourConcept: yourConcept,
 	  tripsRole: role,
