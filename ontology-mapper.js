@@ -2376,6 +2376,9 @@ $(function() {
   };
 
   function remYourRole(evt) {
+    // 'rem' event from remYourRoleFiller can bubble up here, so check that
+    // evt.target is really a your role li before proceeding
+    if (!/^your-role-/.test(evt.target.id)) { return; }
     // NOTE: this isn't called for inherited roles
     var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
