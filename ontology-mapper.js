@@ -1065,7 +1065,10 @@ $(function() {
   /* load words and examples if necessary, and then call done() */
   function ensureSenses(conceptName, done) {
     var concept = tripsOnt[conceptName];
-    if ('senses' in concept) {
+    if (concept === null || !('object' == typeof concept)) {
+      console.log('TRIPS concept name ' + conceptName + ' led to bogus value:');
+      console.log(concept);
+    } else if ('senses' in concept) {
       done();
     } else {
       $.ajax(DSL_DATA_PATH + encodeURIComponent('ONT' + COLONS_OR_UNDERSCORE + conceptName + '.xml'), { dataType: 'xml' }).
