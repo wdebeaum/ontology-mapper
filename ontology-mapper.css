@@ -55,7 +55,7 @@ h1, h2, h3 {
 }
 
 #your-roles > li > input[type=text] {
-  width: calc(100% - 15em);
+  width: calc(100% - 20em);
 }
 
 #your-examples {

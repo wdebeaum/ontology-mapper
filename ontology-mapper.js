@@ -1277,6 +1277,12 @@ $(function() {
 	  });
 	}
 	newLi.find('input:checkbox')[0].checked = role.filledBySymbol;
+	var fillerValuesUl = newLi.children('ul');
+	if (role.filledBySymbol) {
+	  fillerValuesUl.hide();
+	} else {
+	  fillerValuesUl.show();
+	}
       });
     }
     setTimeout(function() {
@@ -2373,6 +2379,39 @@ $(function() {
     } else {
       role[key] = $(evt.currentTarget).val();
     }
+  };
+
+  window.inputYourRoleFilledBySymbol = function(evt) {
+    var id = yourJsTree.get_selected()[0];
+    var concept = yourOntById[id];
+    var roleLi = $(evt.currentTarget).closest('li');
+    var i = roleLi.index();
+    if (concept.roles.length <= i) {
+      throw new Error('WTF');
+    }
+    var role = concept.roles[i];
+    role.filledBySymbol = evt.currentTarget.checked;
+    var fillerValuesUl = roleLi.children('ul');
+    if (role.filledBySymbol) {
+      // remove any role filler values and their mappings
+      clearUlUpToTemplate(fillerValuesUl);
+      role.fillers.splice(0); // empty the array
+      concept.conceptMappings.forEach(function(conceptMapping) {
+	conceptMapping.roleMappings =
+	  conceptMapping.roleMappings.filter(function(m) {
+	    if (m.yourRole === role) {
+	      if (m.line !== undefined) { m.line.remove(); }
+	      return false;
+	    } else {
+	      return true;
+	    }
+	  });
+      });
+      fillerValuesUl.hide();
+    } else {
+      fillerValuesUl.show();
+    }
+    updateMap('your', 'role', { openClose: true });
   };
 
   function remYourRole(evt) {
