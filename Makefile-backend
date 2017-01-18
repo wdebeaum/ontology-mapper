@@ -11,7 +11,9 @@ CLASSES = \
 	ExtractionMapper.class \
 	ExtractionMapper\$$1.class \
 	ExtractionMapper\$$RoleMap.class \
-	ExtractionMapper\$$RuleParams.class
+	ExtractionMapper\$$RuleParams.class \
+	ExtractionMapper\$$SMOne.class
+
 
 all: download $(JAVA_MAIN)
 	$(JAVAC) -cp .:json-simple.jar $(JAVA_MAIN)
