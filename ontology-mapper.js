@@ -1068,6 +1068,10 @@ $(function() {
     if (concept === null || !('object' == typeof concept)) {
       console.log('TRIPS concept name ' + conceptName + ' led to bogus value:');
       console.log(concept);
+      // call done anyway, because some words in TRIPS are genuinely defined
+      // with "non-hierarchy-lf"s, meaning their "class" is not an ONT type. I
+      // don't like it, but that's how it is.
+      done();
     } else if ('senses' in concept) {
       done();
     } else {
