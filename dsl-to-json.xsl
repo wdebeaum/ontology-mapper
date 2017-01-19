@@ -12,8 +12,7 @@ Note: this is not meant to be a general transformation, it only works for these
 files in this situation.
   -->
 
-<!-- doesn't work on Safari :( -->
-<!-- import href="str.replace.template.xsl" / -->
+<import href="str.replace.template.xsl" />
 
 <output method="text" encoding="UTF-8" />
 
@@ -23,8 +22,8 @@ files in this situation.
 
 <template name="escape">
  <param name="str" />
- <!-- TODO? control chars \b \f \n \r \t -->
- <!-- call-template name="str:replace">
+ <!-- TODO? control chars \b \f \n \r \t, \ itself -->
+ <call-template name="str:replace">
   <with-param name="search" select="'&quot;'" />
   <with-param name="replace" select="'\&quot;'" />
   <with-param name="string">
@@ -34,9 +33,9 @@ files in this situation.
     <with-param name="string" select="$str" />
    </call-template>
   </with-param>
- </call-template -->
- <!-- we don't actually escape anything, so maybe this isn't necessary -->
- <value-of select="$str" />
+ </call-template>
+ <!-- we don't actually escape anything, so maybe this isn't necessary
+ <value-of select="$str" / -->
 </template>
 
 <template match="relation[@label='inherit']">

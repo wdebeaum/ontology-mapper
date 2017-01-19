@@ -12,10 +12,8 @@ DOWNLOADS = \
 	32px.png \
 	40px.png \
 	throbber.gif \
-	jquery-ui
-
-# this doesn't work on Safari :(
-#	str.replace.template.xsl
+	jquery-ui \
+	str.replace.template.xsl
 
 SRCS = \
 	$(DOWNLOADS) \
@@ -47,8 +45,8 @@ jstree.min.js:
 style.min.css 32px.png 40px.png throbber.gif:
 	$(call download,https://cdnjs.cloudflare.com/ajax/libs/jstree/$(JSTREE_VERSION)/themes/default/$@)
 
-#str.replace.template.xsl:
-#	$(call download,http://exslt.org/str/functions/replace/str.replace.template.xsl)
+str.replace.template.xsl:
+	$(call download,http://exslt.org/str/functions/replace/str.replace.template.xsl)
 
 # this horrendous command derived from going to http://jqueryui.com/download/,
 # unchecking Components>Toggle All, checking Widgets>Autocomplete, and
