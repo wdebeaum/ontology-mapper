@@ -13,8 +13,46 @@ $(function() {
       processor = new XSLTProcessor();
       $.ajax(url, { dataType: 'xml' }).
         done(function(data) {
-	  processor.importStylesheet(data);
-	  done(processor);
+	  // Safari doesn't do xsl:imports unless there is a frame associated
+	  // with the transformed XML (which we don't have here), so we must
+	  // do them manually
+	  if (navigator.userAgent.indexOf("Safari") >= 0 &&
+	      navigator.userAgent.indexOf("Chrome") < 0) {
+	    var imports = $(data).find('import');
+	    imports.remove();
+	    var numImportsLeft = imports.length;
+	    if (numImportsLeft == 0) {
+	      // no imports, just do the main stylesheet
+	      processor.importStylesheet(data);
+	      done(processor);
+	    } else { // have imports
+	      imports.each(function(index, element) {
+		var href = $(element).attr('href');
+		$.ajax(href, { dataType: 'xml' }).
+		  done(function(importData) {
+		    // don't bother with recursive imports; we don't use them.
+		    // can't call importStylesheet multiple times, have to
+		    // instead insert the content of the imported stylesheet at
+		    // the beginning of the main stylesheet
+		    $(data.documentElement).prepend(
+		      $(importData.documentElement).contents());
+		    numImportsLeft--;
+		    if (numImportsLeft == 0) {
+		      // finally import the main stylesheet
+		      processor.importStylesheet(data);
+		      done(processor);
+		    }
+		  }).
+		  fail(function(jqXHR, textStatus, errorThrown) {
+		    console.log('while processing <xsl:import href=' + JSON.stringify(href) + ' /> for Safari:');
+		    console.log({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
+		  });
+	      });
+	    }
+	  } else { // sane browser
+	    processor.importStylesheet(data);
+	    done(processor);
+	  }
 	}).
 	fail(function(jqXHR, textStatus, errorThrown) {
 	  console.log({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
