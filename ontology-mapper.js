@@ -36,6 +36,14 @@ $(function() {
 		    // the beginning of the main stylesheet
 		    $(data.documentElement).prepend(
 		      $(importData.documentElement).contents());
+		    // serialize and then deserialize, because the actual DOM
+		    // objects that we moved from one document to another are
+		    // still contaminated by references to the old document
+		    data =
+		      (new DOMParser()).parseFromString(
+		        (new XMLSerializer()).serializeToString(data),
+			'text/xml'
+		      );
 		    numImportsLeft--;
 		    if (numImportsLeft == 0) {
 		      // finally import the main stylesheet
@@ -68,9 +76,15 @@ $(function() {
       throw "Unsupported browser";
     }
   }
+  
+  function evalAndLog(str) {
+    console.log(str);
+    return eval(str);
+  }
 
   function xslTransformAndEval(proc, doc) {
-    return eval('(' + (
+    console.log((new XMLSerializer()).serializeToString(doc));
+    return evalAndLog('(' + (
       window.XSLTProcessor ?
 	$(proc.transformToDocument(doc).documentElement).text()
       : // IE
