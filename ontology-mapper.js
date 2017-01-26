@@ -686,30 +686,87 @@ $(function() {
    * clicking mapping lines
    */
 
-  /* Given a pair of concepts linked by a grey mapping line, return the pair of
-   * concepts under those two that are actually mapped, if there is only one.
-   * If there are none, return [undefined, undefined]. If there is more than
-   * one, return undefined. The first call should omit the last two arguments,
-   * they're only used for recursive calls.
+  /* Return the list of names of (non-strict) ancestors of descendantConcept,
+   * in order from root to descendant.
    */
-  function onlyMappingUnder(tripsConcept, yourConcept, mappedTripsConcept, mappedYourConcept) {
+  function ancestors(side, descendantConcept) {
+    var tree;
+    var id;
+    switch (side) {
+      case 'trips':
+        tree = tripsJsTree;
+	id = 'ont__' + descendantConcept.name;
+	break;
+      case 'your':
+        tree = yourJsTree;
+	id = descendantConcept.id;
+	break;
+      default: throw new Error('WTF');
+    }
+    return tree.get_path(id);
+  }
+
+  /* Does ancestorConcept subsume descendantConcept? */
+  function subsumes(side, ancestorConcept, descendantConcept) {
+    return ancestors(side, descendantConcept).includes(ancestorConcept.name);
+  }
+
+  /* Return the concept that subsumes both a and b, but as few others as
+   * possible.
+   */
+  function leastCommonSubsumer(side, a, b) {
+    var aa = ancestors(side, a);
+    var ba = ancestors(side, b);
+    var i = 0;
+    var ont;
+    switch (side) {
+      case 'trips':
+        ont = tripsOnt;
+	break;
+      case 'your':
+        ont = yourOntByName;
+	break;
+      default: throw new Error('WTF');
+    }
+    for(;; i++) {
+      if (i >= aa.length || aa[i] != ba[i]) {
+	return ont[aa[i-1]];
+	break;
+      } else if (i >= ba.length) {
+	return ont[ba[i-1]];
+      }
+    }
+    throw new Error('WTF');
+  }
+
+  /* Given a pair of concepts linked by a grey mapping line, find concept
+   * mappings between concepts under that pair on both sides, and return:
+   * - [undefined, undefined, false], if there are no such mappings;
+   * - [tripsMapped, yourMapped, false], the pair of concepts under those two
+   *   that are actually mapped, if there is only one such pair;
+   * - [tripsLCS, yourLCS, true], if there is more than one, where the LCSs are
+   *   the least common subsumer concepts of all the mappings under the
+   *   original pair.
+   * The first call should omit the last two arguments, they're only used for
+   * recursive calls.
+   */
+  function onlyMappingUnder(tripsConcept, yourConcept, tripsLCS, yourLCS) {
+    var isLCS = false;
     // check the mappings for yourConcept
     for (var i = 0; i < yourConcept.conceptMappings.length; i++) {
       var cm = yourConcept.conceptMappings[i];
-      if (cm.tripsConcepts.length != 1) {
-	return undefined;
-      }
-      if (mappedTripsConcept === undefined) {
-	mappedTripsConcept = cm.tripsConcepts[0];
-	mappedYourConcept = yourConcept;
-	var tripsAncestors =
-	  tripsJsTree.get_path('ont__' + mappedTripsConcept.name);
-	if (!tripsAncestors.includes(tripsConcept.name)) {
-	  return undefined;
+      for (var j = 0; j < cm.tripsConcepts.length; j++) {
+	var tripsMapped = cm.tripsConcepts[j];
+	if (!subsumes('trips', tripsConcept, tripsMapped)) {
+	  continue;
+	} else if (tripsLCS === undefined) {
+	  tripsLCS = tripsMapped;
+	  yourLCS = yourConcept;
+	} else if (tripsMapped !== tripsLCS || yourConcept !== yourLCS) {
+	  isLCS = true;
+	  tripsLCS = leastCommonSubsumer('trips', tripsMapped, tripsLCS);
+	  yourLCS = leastCommonSubsumer('your', yourConcept, yourLCS);
 	}
-      } else if (mappedTripsConcept !== cm.tripsConcepts[0] ||
-                 mappedYourConcept !== yourConcept) {
-	return undefined;
       }
     }
     // check its descendants too
@@ -718,21 +775,18 @@ $(function() {
 	return yourOntById[child.id];
       });
     for (var i = 0; i < yourChildren.length; i++) {
-      var sides = onlyMappingUnder(tripsConcept, yourChildren[i], mappedTripsConcept, mappedYourConcept);
-      if (sides === undefined) {
-	return undefined;
-      }
-      mappedTripsConcept = sides[0];
-      mappedYourConcept = sides[1];
+      var sides = onlyMappingUnder(tripsConcept, yourChildren[i], tripsLCS, yourLCS);
+      if (sides[2]) { isLCS = true; }
+      tripsLCS = sides[0];
+      yourLCS = sides[1];
     }
-    return [mappedTripsConcept, mappedYourConcept];
+    return [tripsLCS, yourLCS, isLCS];
   }
   window.onlyMappingUnder = onlyMappingUnder;
 
   function selectConceptMapping(evt) {
     var line = $(this);
     var id = line.attr('id');
-    console.log('selected concept mapping ' + id);
     var sides = id.split(/__to__/);
     // get the deeper mapping that this line represents, if there is only one
     var deepSides =
@@ -740,12 +794,11 @@ $(function() {
         tripsOnt[sides[0].replace(/^ont__/,'')],
 	yourOntById[sides[1]]
       );
-    if (deepSides !== undefined) {
-      sides = [
-        'ont__' + deepSides[0].name,
-	deepSides[1].id
-      ];
-    }
+    console.log(deepSides);
+    sides = [
+      'ont__' + deepSides[0].name,
+      deepSides[1].id
+    ];
     // select each side and scroll it into view
     tripsJsTree.deselect_all();
     tripsJsTree.select_node(sides[0]);
@@ -753,9 +806,9 @@ $(function() {
     yourJsTree.deselect_all();
     yourJsTree.select_node(sides[1]);
     $('#' + sides[1])[0].scrollIntoView(true);
-    // also open each side if we didn't get a unique deeper mapping
-    // TODO open down to the common ancestor of all the mappings
-    if (deepSides === undefined) {
+    // also open each side down to the least common ancestor if we didn't get a
+    // unique deeper mapping
+    if (deepSides[2]) {
       tripsJsTree.open_node(sides[0]);
       yourJsTree.open_node(sides[1]);
     }
@@ -764,7 +817,6 @@ $(function() {
   function selectRoleMapping(evt) {
     var line = $(this);
     var id = line.attr('id');
-    console.log('selected role mapping ' + id);
     var sides = id.split(/__to__/);
     selectRole($('#' + sides[0])[0]);
     selectRole($('#' + sides[1])[0]);
