@@ -167,6 +167,7 @@ var {
    <li>Multiple concept mappings for a given pair of concepts, with different role mappings (and associated role filler types and extra roles).
   </ul>
  <li>Search for concepts by name in TRIPS ontology or your ontology (with autocomplete).
+ <li>Click on mapping lines to quickly select the mapped things.
  <li>Load/save your ontology and mappings as JSON.
  <li>Add a prefix to all concepts/roles in your ontology.
  <li>Mappings between concepts that aren't visible because that part of the tree is collapsed, are displayed as if they were mappings between their nearest visible ancestors, except partially transparent.
@@ -178,6 +179,9 @@ var {
 
 <h4>Planned Features</h4>
 <ul>
+ <li>When clicking on a concept mapping line representing multiple mappings, open/select the lowest common ancestors of all the mappings, instead of just the currently displayed concepts.
+ <li>Look up words in the background when loading a file with lots of them, instead of waiting for lookup to complete before drawing mapping lines.
+ <li>Display a spinner graphic when things are happening in the background.
  <li>Display mappings between TRIPS concepts and WordNet senses in the TRIPS concept details, and use them as extra words for the word count feature.
  <li>Extend mapping lines into tree views, up to the name of the concept.
 </ul>
@@ -203,7 +207,7 @@ var {
 <tr><td colspan="2" class="pane">[TRIPS concept detail view]</td><td class="pane">[role mappings]</td><td colspan="2" class="pane">[your concept detail view]</td></tr>
 </table>
 
-<p>The <button>+</button> and <button>-</button> buttons add and remove things. The pair of buttons labeled "concept" at the top right add and remove concepts in your ontology. The pairs labeled "map" in the middle add and remove mappings between the TRIPS ontology and your ontology. The top middle pair (in the trees row) add and remove mappings between the selected <em>concepts</em>, and the bottom middle pair (in the details/roles row) add and remove mappings between the selected <em>roles</em>. Mappings appear in the middle column as lines drawn between the mapped concepts/roles. Mappings between concepts hidden because that part of the tree is collapsed are drawn between their nearest visible ancestors, and are partially transparent. You can also drag between the black spots in the mappings column (drag handles) to add mappings.</p>
+<p>The <button>+</button> and <button>-</button> buttons add and remove things. The pair of buttons labeled "concept" at the top right add and remove concepts in your ontology. The pairs labeled "map" in the middle add and remove mappings between the TRIPS ontology and your ontology. The top middle pair (in the trees row) add and remove mappings between the selected <em>concepts</em>, and the bottom middle pair (in the details/roles row) add and remove mappings between the selected <em>roles</em>. Mappings appear in the middle column as lines drawn between the mapped concepts/roles. Mappings between concepts hidden because that part of the tree is collapsed are drawn between their nearest visible ancestors, and are partially transparent. You can also drag between the black spots in the mappings column (drag handles) to add mappings. Clicking on a mapping line selects the mapped things. If multiple concept mappings are represented by one line because one or both sides are collapsed, clicking the line just expands the trees.</p>
 
 <p>Role mappings are specific to the currently selected concept mapping. You may make multiple concept mappings for a given pair of concepts, with different sets of role mappings. Use the selection box to the right of the concept map <button>-</button> button to switch between different concept mappings for the selected pair of concepts. Role mapping lines for all the concept mappings between the selected pair of concepts are displayed at once. But they are color coded according to the concept mapping they are a part of, as are the entries in the selection box, and the heading above the role mappings section.</p>
 

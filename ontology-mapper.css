@@ -204,11 +204,11 @@ input:invalid, select:invalid {
 
 .handle {
   fill-color: black;
-  stroke: none;
+  stroke: #444;
 }
 
 line {
-  stroke-width: 0.1em;
+  stroke-width: 0.3em;
   stroke: black;
 }
 

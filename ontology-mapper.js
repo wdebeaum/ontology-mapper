@@ -83,8 +83,8 @@ $(function() {
   }
 
   function xslTransformAndEval(proc, doc) {
-    console.log((new XMLSerializer()).serializeToString(doc));
-    return evalAndLog('(' + (
+    //console.log((new XMLSerializer()).serializeToString(doc));
+    return eval/*AndLog*/('(' + (
       window.XSLTProcessor ?
 	$(proc.transformToDocument(doc).documentElement).text()
       : // IE
@@ -201,6 +201,11 @@ $(function() {
     var ul = li.closest('.selectable');
     deselectAllLis(ul);
     li.addClass('selected');
+    // if this is a line, point the corresponding use element at it, so that it
+    // appears on top
+    if (/-lines$/.test(ul.attr('id'))) {
+      ul.next('use')[0].setAttributeNS("http://www.w3.org/1999/xlink", 'href', '#' + li.attr('id'));
+    }
     return true;
   };
 
@@ -235,10 +240,12 @@ $(function() {
 	case 'concept-lines':
 	  tripsScroll = $('#trips-tree-scroll').scrollTop();
 	  yourScroll = $('#your-tree-scroll').scrollTop();
+	  line.on('click', selectConceptMapping);
 	  break;
 	case 'role-lines':
 	  tripsScroll = $('#trips-details').scrollTop();
 	  yourScroll = $('#your-details').scrollTop();
+	  line.on('click', selectRoleMapping);
 	  break;
 	default:
 	  throw new Error('WTF: ' + linesG[0]);
@@ -676,6 +683,93 @@ $(function() {
   $('svg').on('dragstart', false);
 
   /*
+   * clicking mapping lines
+   */
+
+  /* Given a pair of concepts linked by a grey mapping line, return the pair of
+   * concepts under those two that are actually mapped, if there is only one.
+   * If there are none, return [undefined, undefined]. If there is more than
+   * one, return undefined. The first call should omit the last two arguments,
+   * they're only used for recursive calls.
+   */
+  function onlyMappingUnder(tripsConcept, yourConcept, mappedTripsConcept, mappedYourConcept) {
+    // check the mappings for yourConcept
+    for (var i = 0; i < yourConcept.conceptMappings.length; i++) {
+      var cm = yourConcept.conceptMappings[i];
+      if (cm.tripsConcepts.length != 1) {
+	return undefined;
+      }
+      if (mappedTripsConcept === undefined) {
+	mappedTripsConcept = cm.tripsConcepts[0];
+	mappedYourConcept = yourConcept;
+	var tripsAncestors =
+	  tripsJsTree.get_path('ont__' + mappedTripsConcept.name);
+	if (!tripsAncestors.includes(tripsConcept.name)) {
+	  return undefined;
+	}
+      } else if (mappedTripsConcept !== cm.tripsConcepts[0]) {
+	return undefined;
+      }
+    }
+    // check its descendants too
+    var yourChildren =
+      yourJsTree.get_json(yourConcept.id).children.map(function(child) {
+	return yourOntById[child.id];
+      });
+    for (var i = 0; i < yourChildren.length; i++) {
+      var sides = onlyMappingUnder(tripsConcept, yourChildren[i], mappedTripsConcept, mappedYourConcept);
+      if (sides === undefined) {
+	return undefined;
+      }
+      mappedTripsConcept = sides[0];
+      mappedYourConcept = sides[1];
+    }
+    return [mappedTripsConcept, mappedYourConcept];
+  }
+  window.onlyMappingUnder = onlyMappingUnder;
+
+  function selectConceptMapping(evt) {
+    var line = $(this);
+    var id = line.attr('id');
+    console.log('selected concept mapping ' + id);
+    var sides = id.split(/__to__/);
+    // get the deeper mapping that this line represents, if there is only one
+    var deepSides =
+      onlyMappingUnder(
+        tripsOnt[sides[0].replace(/^ont__/,'')],
+	yourOntById[sides[1]]
+      );
+    if (deepSides !== undefined) {
+      sides = [
+        'ont__' + deepSides[0].name,
+	deepSides[1].id
+      ];
+    }
+    // select each side and scroll it into view
+    tripsJsTree.deselect_all();
+    tripsJsTree.select_node(sides[0]);
+    $('#' + sides[0])[0].scrollIntoView(true);
+    yourJsTree.deselect_all();
+    yourJsTree.select_node(sides[1]);
+    $('#' + sides[1])[0].scrollIntoView(true);
+    // also open each side if we didn't get a unique deeper mapping
+    // TODO open down to the common ancestor of all the mappings
+    if (deepSides === undefined) {
+      tripsJsTree.open_node(sides[0]);
+      yourJsTree.open_node(sides[1]);
+    }
+  }
+
+  function selectRoleMapping(evt) {
+    var line = $(this);
+    var id = line.attr('id');
+    console.log('selected role mapping ' + id);
+    var sides = id.split(/__to__/);
+    selectRole($('#' + sides[0])[0]);
+    selectRole($('#' + sides[1])[0]);
+  }
+
+  /*
    * word counts
    */
 
@@ -805,6 +899,11 @@ $(function() {
     } else {
       var word = words.shift();
       wordsAlreadyLookedUp[word] = true;
+      // feedback while waiting for file with lots of words to load
+      // TODO spinner
+      if (words.length % 10 == 0) {
+	console.log('looking up word in TRIPS lexicon: ' + word);
+      }
       $.ajax({
 	url: DSL_DATA_PATH + '../data/' +
 	     encodeURIComponent('W' + COLONS_OR_UNDERSCORE + word.replace(/\s+/, '_') + '.xml'),
