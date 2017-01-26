@@ -938,6 +938,30 @@ $(function() {
     }
   }
 
+  var spinCount = 0;
+  var spinIndex = 0;
+  var spinChars =
+  " ▏▎▍▌▋▊▉█▇▆▅▄▃▂▁";
+  // "◧◩⬒⬔◨◪⬓⬕"; // half-filled box with spinning contents
+  // "│╱─╲"; // Unicode spinning line
+  // "|/-\\"; // ASCII spinning line
+  function spin(maxCount) {
+    $('#spinner').show();
+    spinCount++;
+    if (spinCount > maxCount) {
+      spinCount = 0;
+      spinIndex++;
+      if (spinIndex >= spinChars.length) {
+	spinIndex = 0;
+      }
+      $('#spinner').text(spinChars[spinIndex]);
+    }
+  }
+
+  function finishSpinning() {
+    $('#spinner').hide();
+  }
+
   /* Make sure that all TRIPS concepts that have senses of any of the given
    * words actually have those senses loaded into tripsOnt, and call the done()
    * callback once they do.
@@ -948,15 +972,13 @@ $(function() {
       words.shift();
     }
     if (words.length === 0) {
+      finishSpinning();
       done();
     } else {
       var word = words.shift();
       wordsAlreadyLookedUp[word] = true;
       // feedback while waiting for file with lots of words to load
-      // TODO spinner
-      if (words.length % 10 == 0) {
-	console.log('looking up word in TRIPS lexicon: ' + word);
-      }
+      spin(10);
       $.ajax({
 	url: DSL_DATA_PATH + '../data/' +
 	     encodeURIComponent('W' + COLONS_OR_UNDERSCORE + word.replace(/\s+/, '_') + '.xml'),

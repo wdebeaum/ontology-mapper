@@ -36,6 +36,13 @@ h1, h2, h3 {
   text-align: center;
 }
 
+#spinner {
+  font-family: monospace;
+  background-color: yellow;
+  color: black;
+  font-size: x-large;
+}
+
 #trees td, #details td {
   height: calc(50vh - 3em - 3px);
   vertical-align: top;
