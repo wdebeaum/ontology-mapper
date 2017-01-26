@@ -707,7 +707,8 @@ $(function() {
 	if (!tripsAncestors.includes(tripsConcept.name)) {
 	  return undefined;
 	}
-      } else if (mappedTripsConcept !== cm.tripsConcepts[0]) {
+      } else if (mappedTripsConcept !== cm.tripsConcepts[0] ||
+                 mappedYourConcept !== yourConcept) {
 	return undefined;
       }
     }
