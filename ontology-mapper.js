@@ -111,7 +111,7 @@ $(function() {
       if ('inherit' in tripsOnt[ontType]) {
 	var parentName = tripsOnt[ontType].inherit;
 	var childNode = treeNodes[ontType];
-	if (!(parentName in treeNodes)) {
+	if (!Object.prototype.hasOwnProperty.call(treeNodes, parentName)) {
 	  throw new Error('bogus parent of ont type ' + ontType + ': ' + parentName);
 	}
 	treeNodes[parentName].children.push(childNode);
@@ -402,7 +402,7 @@ $(function() {
 	    yourConcept.conceptMappings.forEach(function(m) {
 	      m.lines = [];
 	      m.tripsConcepts.forEach(function(tc) {
-		if (!(tc.name in lineFrom)) {
+		if (!Object.prototype.hasOwnProperty.call(lineFrom, tc.name)) {
 		  var tripsID = 'ont__' + tc.name;
 		  var tripsVisibleAncestorID =
 		    visibleAncestorID(tripsJsTree, tripsID);
@@ -782,7 +782,6 @@ $(function() {
     }
     return [tripsLCS, yourLCS, isLCS];
   }
-  window.onlyMappingUnder = onlyMappingUnder;
 
   function selectConceptMapping(evt) {
     var line = $(this);
@@ -825,6 +824,72 @@ $(function() {
   /*
    * word counts
    */
+
+  /* Call the given async lookup function for each input, and then call done.
+   * Ensure that each input has the function called on it exactly once, even if
+   * queueLookup is called multiple times with some of the same inputs. Calls
+   * spin(10) on each lookup, and finishSpinning() when done.
+   *
+   * The opts argument is an object with these properties:
+   *
+   * lookup(input, done) causes lookupStarted to return true when it starts,
+   * and causes lookupFinished to return true when it finishes, just before
+   * calling its done argument.
+   *
+   * lookupStarted(input) => bool
+   *
+   * lookupFinished(input) => bool
+   *
+   * onLookupFinished(input, fn) should cause fn to be called when input is
+   * finished
+   *
+   * inputs is an array, and will be modified
+   *
+   * done()
+   *
+   * join() optional; defaults to a function that calls done() after being
+   * called inputs.length times
+   */
+  function queueLookup(opts) {
+    // set up join function if necessary
+    if (opts.join === undefined) {
+      // if we start out with no input, just finish immediately
+      if (opts.inputs.length == 0) {
+	opts.done();
+	return;
+      }
+      var inputsLeft = opts.inputs.length;
+      opts.join = function() {
+	inputsLeft--;
+	console.log('join; ' + inputsLeft + ' inputs left');
+	if (inputsLeft == 0) {
+	  finishSpinning();
+	  opts.done();
+	}
+      }
+    }
+    // eliminate inputs that have already started
+    while (opts.inputs.length > 0 && opts.lookupStarted(opts.inputs[0])) {
+      var input = opts.inputs.shift();
+      // if it's already finished, join now
+      if (opts.lookupFinished(input)) {
+	opts.join();
+      } else { // otherwise, join when it finishes
+	opts.onLookupFinished(input, opts.join);
+      }
+    }
+    if (opts.inputs.length > 0) {
+      spin(10);
+      // actually do lookup for one input.
+      // when lookup is done, call queueLookup with the same opts again
+      // (it's not infinite recursion because we're making opts.inputs smaller
+      // each time)
+      opts.lookup(opts.inputs.shift(), function() {
+	opts.join();
+	queueLookup(opts)
+      });
+    }
+  }
 
   /* Return a version of array that is sorted and has duplicates removed (as if
    * run through unix "| sort | uniq").
@@ -889,7 +954,7 @@ $(function() {
     var oppositeWords =
       (oppositeJsTree.is_closed(oppositeID) ?
 	// NOTE: we know we have all the words in the descendants even when
-	// oppositeSite=='trips', because we either added them this session and
+	// oppositeSide=='trips', because we either added them this session and
 	// looked them up then, or we loaded a file, and we looked up all the
 	// words from the file then. This lets us avoid looking up the entire
 	// tree if someone selects ONT::root.
@@ -968,76 +1033,61 @@ $(function() {
    */
   var wordsAlreadyLookedUp = {};
   function lookUpWords(words, done) {
-    while (words.length > 0 && wordsAlreadyLookedUp[words[0]]) {
-      words.shift();
-    }
-    if (words.length === 0) {
-      finishSpinning();
-      done();
-    } else {
-      var word = words.shift();
-      wordsAlreadyLookedUp[word] = true;
-      // feedback while waiting for file with lots of words to load
-      spin(10);
-      $.ajax({
-	url: DSL_DATA_PATH + '../data/' +
-	     encodeURIComponent('W' + COLONS_OR_UNDERSCORE + word.replace(/\s+/, '_') + '.xml'),
-	dataType: 'xml'
-      // on success, make sure each TRIPS concept named $name from <CLASS
-      // onttype="$name"> has its senses loaded, and then continue looking up
-      // this list of words
-      }).done(function(data) {
-	var classElements = $(data).find('CLASS').toArray();
-	// this recursive, nested function is really a forEach loop over
-	// classElements, with async parts
-	function processNextClassElement() {
-	  if (classElements.length === 0) {
-	    lookUpWords(words, done);
-	  } else {
-	    var name = $(classElements.shift()).attr('onttype');
-	    ensureSenses(name, processNextClassElement);
-	  }
+    console.log('looking up words:');
+    console.log(words);
+    queueLookup({
+      inputs: words,
+      done: done,
+      lookupStarted: function(word) {
+	console.log('lookupStarted(W::' + word + ') => ' + JSON.stringify(Object.prototype.hasOwnProperty.call(wordsAlreadyLookedUp, word)));
+	return Object.prototype.hasOwnProperty.call(wordsAlreadyLookedUp, word);
+      },
+      lookupFinished: function(word) {
+	console.log('lookupFinished(W::' + word + ') => ' + JSON.stringify(wordsAlreadyLookedUp[word] == 'finished'));
+	return wordsAlreadyLookedUp[word] == 'finished';
+      },
+      onLookupFinished: function(word, fn) {
+	console.log('adding to W::' + word + '.lookupListeners');
+	wordsAlreadyLookedUp[word].push(fn);
+      },
+      lookup: function(word, done) {
+	wordsAlreadyLookedUp[word] = [];
+	console.log('lookup started for W::' + word);
+	function doneWithThisWord() {
+	  console.log('doneWithThisWord');
+	  wordsAlreadyLookedUp[word].forEach(function(fn) { fn(); });
+	  wordsAlreadyLookedUp[word] = 'finished';
+	  console.log('lookup finished for W::' + word);
+	  done();
 	}
-	processNextClassElement();
-      // on failure, just continue looking up this list of words
-      }).fail(function() {
-	lookUpWords(words, done);
-      });
-    }
+	$.ajax({
+	  url: DSL_DATA_PATH + '../data/' +
+	       encodeURIComponent('W' + COLONS_OR_UNDERSCORE + word.replace(/\s+/, '_') + '.xml'),
+	  dataType: 'xml'
+	// on success, make sure each TRIPS concept named $name from <CLASS
+	// onttype="$name"> has its senses loaded
+	}).done(function(data) {
+	  var ontTypes =
+	    $(data).find('CLASS').toArray().map(
+	      function(classElement) { return $(classElement).attr('onttype'); }
+	    );
+	  ensureSenses(ontTypes, doneWithThisWord);
+	// on failure, just say we're done
+	}).fail(doneWithThisWord);
+      }
+    });
   }
 
   var updateWordCountsTimeoutID;
-  var wordLookupCallback;
   function lookupAndUpdateWordCounts(yourConcept) {
     // limit how often we do this, since it's an expensive enough operation
     // that we don't want to do it on each keystroke
     clearTimeout(updateWordCountsTimeoutID);
     updateWordCountsTimeoutID =
       setTimeout(function() {
-	// we want to do lookUpWords and then updateWordCounts, but since
-	// lookUpWords is async but not reentrant, and we're already calling
-	// this asynchronously with setTimeout, we have to be careful to queue
-	// up calls to lookUpWords
-	function doMyLookup() {
-	  wordLookupCallback = function() {
-	    updateWordCounts('trips', yourConcept);
-	  };
-		      // need to pass a copy because lookUpWords shifts out of
-		      // its argument
-	  lookUpWords([].concat(yourConcept.words), function() {
-	    wordLookupCallback();
-	    wordLookupCallback = undefined;
-	  });
-	}
-	if (wordLookupCallback === undefined) { // not busy, just do it
-	  doMyLookup();
-	} else { // lookUpWords is busy, schedule doMyLookup after existing CB
-	  var oldWordLookupCallback = wordLookupCallback;
-	  wordLookupCallback = function() {
-	    oldWordLookupCallback();
-	    doMyLookup();
-	  };
-	}
+	lookUpWords([].concat(yourConcept.words), function() {
+	  updateWordCounts('trips', yourConcept);
+	});
       }, 200); // milliseconds
   }
 
@@ -1149,7 +1199,7 @@ $(function() {
     if ('features' in parentFeats) {
       if ('features' in childFeats) {
 	for (var k in parentFeats.features) {
-	  if (!(k in childFeats.features)) {
+	  if (!Object.prototype.hasOwnProperty.call(childFeats.features, k)) {
 	    childFeats.features[k] = parentFeats.features[k];
 	  }
 	}
@@ -1288,28 +1338,76 @@ $(function() {
     }
   }
 
-  /* load words and examples if necessary, and then call done() */
-  function ensureSenses(conceptName, done) {
-    var concept = tripsOnt[conceptName];
-    if (concept === null || !('object' == typeof concept)) {
-      console.log('TRIPS concept name ' + conceptName + ' led to bogus value:');
-      console.log(concept);
-      // call done anyway, because some words in TRIPS are genuinely defined
-      // with "non-hierarchy-lf"s, meaning their "class" is not an ONT type. I
-      // don't like it, but that's how it is.
-      done();
-    } else if ('senses' in concept) {
-      done();
-    } else {
-      $.ajax(DSL_DATA_PATH + encodeURIComponent('ONT' + COLONS_OR_UNDERSCORE + conceptName + '.xml'), { dataType: 'xml' }).
+  /* load words and examples if necessary, and then call done().
+   * conceptNames may be an array of concept names, or a single concept name.
+   */
+  function ensureSenses(conceptNames, done) {
+    if (!(conceptNames instanceof Array)) {
+      conceptNames = [conceptNames];
+    }
+    var concepts =
+      conceptNames.map(function(conceptName) {
+	var concept = tripsOnt[conceptName];
+	// filter out undefined TRIPS concepts, but continue anyway, because
+	// some words in TRIPS are genuinely defined with "non-hierarchy-lf"s,
+	// meaning their "class" is not an ONT type. I don't like it, but
+	// that's how it is.
+	if (concept === null || !('object' == typeof concept)) {
+	  console.log('TRIPS concept name ' + conceptName +
+		      ' led to bogus value:');
+	  console.log(concept);
+	  return undefined;
+	}
+	return concept;
+      }).
+      filter(function(concept) {
+	return (concept !== undefined);
+      });
+    console.log({ conceptNames: concepts.map(function(c) { return c.name; }) });
+    queueLookup({
+      inputs: concepts,
+      done: done,
+      lookupStarted: function(concept) {
+	console.log('lookupStarted(ONT::' + concept.name + ') => ' + JSON.stringify('senses' in concept));
+	return ('senses' in concept);
+      },
+      lookupFinished: function(concept) {
+	console.log('lookupFinished(ONT::' + concept.name + ') => ' + JSON.stringify(concept.senses instanceof Array));
+	return (concept.senses instanceof Array);
+      },
+      onLookupFinished: function(concept, fn) {
+	console.log('adding to ONT::' + concept.name + '.lookupListeners');
+	concept.lookupListeners.push(fn);
+      },
+      lookup: function(concept, done) {
+	console.log('initializing ONT::' + concept.name + '.lookupListeners');
+	concept.lookupListeners = [];
+	concept.senses = null; // make lookupStarted return true
+	console.log('lookup started for ONT::' + concept.name);
+	$.ajax({
+	  url: DSL_DATA_PATH +
+	       encodeURIComponent(
+		 'ONT' + COLONS_OR_UNDERSCORE + concept.name + '.xml'
+	       ),
+	  dataType: 'xml'
+	}).
 	done(function(conceptDSL) {
 	  concept.senses = xslTransformAndEval(dslToJSON, conceptDSL);
+	  console.log('lookup finished for ONT::' + concept.name);
+	  console.log(concept);
+	  concept.lookupListeners.forEach(function(fn) {
+	    console.log('calling a lookupListener for ONT::' + concept.name);
+	    fn();
+	  });
+	  delete concept.lookupListeners;
+	  console.log('deleted ONT::' + concept.name + '.lookupListeners');
 	  done();
 	}).
 	fail(function(jqXHR, textStatus, errorThrown) {
 	  console.log({ jqXHR: jqXHR, textStatus: textStatus, errorThrown: errorThrown });
 	});
-    }
+      }
+    });
   }
 
   function formatMaybeDisj(x) {
@@ -1703,7 +1801,7 @@ $(function() {
 
   function tripsConceptSearch(search) {
     console.log('searching trips ontology for concept named ' + search);
-    if (search in tripsOnt) {
+    if (Object.prototype.hasOwnProperty.call(tripsOnt, search)) {
       tripsJsTree.deselect_all();
       tripsJsTree.select_node('ont__' + search);
       $('#ont__' + search)[0].scrollIntoView(true);
@@ -1734,7 +1832,7 @@ $(function() {
 
   function yourConceptSearch(search) {
     console.log('searching your ontology for concept named ' + search);
-    if (search in yourOntByName) {
+    if (Object.prototype.hasOwnProperty.call(yourOntByName, search)) {
       var id = yourOntByName[search].id;
       yourJsTree.deselect_all();
       yourJsTree.select_node(id);
@@ -1982,7 +2080,7 @@ $(function() {
 	conceptMapping.tripsConcepts = [tripsConcept];
 	if (names.length == 1 && names[0] === '') { names.pop(); }
 	names.forEach(function(name) {
-	  if (name in tripsOnt) {
+	  if (Object.prototype.hasOwnProperty.call(tripsOnt, name)) {
 	    if (name === tripsConcept.name) {
 	      warnings.push(
 	        name + ' is the name of the TRIPS concept you have selected;' +
@@ -2368,7 +2466,7 @@ $(function() {
 	    throw 'Missing role name between ' + lastStep.fillerType + ' and ' + fillerType;
 	  }
 	  if (!((i === values.length - 1 && fillerType === 'nil') ||
-	        (fillerType in tripsOnt))) {
+	        Object.prototype.hasOwnProperty.call(tripsOnt, fillerType))) {
 	    throw 'Not a trips concept name or final nil: ' + fillerType;
 	  }
 	  lastStep.fillerType = fillerType;
@@ -2559,7 +2657,7 @@ $(function() {
     var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
     var newName = $(this).val();
-    if (newName in yourOntByName) {
+    if (Object.prototype.hasOwnProperty.call(yourOntByName, newName)) {
       alert('There is already a concept in your ontology named ' + JSON.stringify(newName) + ".\nYou must rename that concept first if you want to change the name of this concept from " + JSON.stringify(concept.name) + ' to ' + JSON.stringify(newName) + '.');
       $(this).val(concept.name);
       yourJsTree.set_text(id, ('' == concept.name ? '(new concept)' : concept.name));
@@ -2944,7 +3042,7 @@ $(function() {
 		    fail('expected role mapping rolePath to have at least one element');
 		  }
 		  var tripsName = m.concept.replace(/^ont::/,'');
-		  if (tripsName in tripsOnt) {
+		  if (Object.prototype.hasOwnProperty.call(tripsOnt, tripsName)) {
 		    var tripsConcept = tripsOnt[tripsName];
 		    var tripsRoleName = m.rolePath[0].role;
 		    if (('string' !== typeof tripsRoleName) || !/^ont::/.test(tripsRoleName)) {
@@ -2989,7 +3087,7 @@ $(function() {
 			      fail('expected role mapping fillerType to be a string starting with ont::');
 			    }
 			    newStep.fillerType = step.fillerType.replace(/^ont::/,'');
-			    if (!(newStep.fillerType in tripsOnt)) {
+			    if (!Object.prototype.hasOwnProperty.call(tripsOnt, newStep.fillerType)) {
 			      warn('your concept ' + name + "'s role " + r.name + ' has a mapping to a path using a non-existing trips concept ' + newStep.fillerType + '; role mapping deleted');
 			      continue mapping;
 			    }
@@ -3027,7 +3125,7 @@ $(function() {
 		fail('expected concept mapping string to start with ont::');
 	      }
 	      var tripsName = cm.replace(/^ont::/,'');
-	      if (tripsName in tripsOnt) {
+	      if (Object.prototype.hasOwnProperty.call(tripsOnt, tripsName)) {
 		conceptMappings.push({
 		  yourConcept: yourConcept,
 		  tripsConcepts: [tripsOnt[tripsName]],
@@ -3057,7 +3155,7 @@ $(function() {
 		  fail('expected concept mapping concept to be a string starting with ont::');
 		}
 		c = c.replace(/^ont::/, '');
-		if (c in tripsOnt) {
+		if (Object.prototype.hasOwnProperty.call(tripsOnt, c)) {
 		  conceptMapping.tripsConcepts.push(tripsOnt[c]);
 		  // apply inheritance so we can replace .added=true with
 		  // .inherited=true in tripsRoles in roleMappings when all
@@ -3187,7 +3285,7 @@ $(function() {
 			}
 			newStep.fillerType = step.fillerType.replace(/^ont::/,'');
 			if (newStep.fillerType !== 'nil' &&
-			    !(newStep.fillerType in tripsOnt)) {
+			    !Object.prototype.hasOwnProperty.call(tripsOnt, newStep.fillerType)) {
 			  warn('your concept ' + name + ' has a mapping to a path using a non-existing trips concept ' + newStep.fillerType + '; role mapping deleted');
 			  continue mapping;
 			}
@@ -3293,17 +3391,13 @@ $(function() {
       siblings.push(treeNodesByName[name])
     }
     $('#your-tree').one('load_node.jstree', function() {
+      // update the map UI
+      updateMap('your', 'concept', { openClose: true });
+      // in case a concept was selected already and we changed the paths in it
+      updateMap('trips', 'role', { openClose: true });
       // look up all words used in your concepts
       allWords = sortUniq(allWords);
-      lookUpWords(allWords, function() {
-	// when that's done, update the map UI
-        updateMap('your', 'concept', { openClose: true });
-	// in case a concept was selected already and we changed the paths in it
-	updateMap('trips', 'role', { openClose: true });
-      });
-      // FIXME there is a danger that the user will do something that calls
-      // lookUpWords before the above call finishes, but hopefully they will
-      // wait until they see the map UI update before doing anything
+      lookUpWords(allWords, function() {});
     });
     yourJsTree.deselect_all();
     yourJsTree.settings.core.data = newJsTreeData;
