@@ -861,7 +861,6 @@ $(function() {
       var inputsLeft = opts.inputs.length;
       opts.join = function() {
 	inputsLeft--;
-	console.log('join; ' + inputsLeft + ' inputs left');
 	if (inputsLeft == 0) {
 	  finishSpinning();
 	  opts.done();
@@ -915,7 +914,7 @@ $(function() {
   function wordsDirectlyInConcept(side, concept) {
     switch (side) {
       case 'trips':
-        if ('senses' in concept) {
+        if ('senses' in concept && concept.senses !== null) {
           return sortUniq(concept.senses.map(function(s) { return s.word }));
 	} else {
 	  return [];
@@ -1033,31 +1032,23 @@ $(function() {
    */
   var wordsAlreadyLookedUp = {};
   function lookUpWords(words, done) {
-    console.log('looking up words:');
-    console.log(words);
     queueLookup({
       inputs: words,
       done: done,
       lookupStarted: function(word) {
-	console.log('lookupStarted(W::' + word + ') => ' + JSON.stringify(Object.prototype.hasOwnProperty.call(wordsAlreadyLookedUp, word)));
 	return Object.prototype.hasOwnProperty.call(wordsAlreadyLookedUp, word);
       },
       lookupFinished: function(word) {
-	console.log('lookupFinished(W::' + word + ') => ' + JSON.stringify(wordsAlreadyLookedUp[word] == 'finished'));
 	return wordsAlreadyLookedUp[word] == 'finished';
       },
       onLookupFinished: function(word, fn) {
-	console.log('adding to W::' + word + '.lookupListeners');
 	wordsAlreadyLookedUp[word].push(fn);
       },
       lookup: function(word, done) {
 	wordsAlreadyLookedUp[word] = [];
-	console.log('lookup started for W::' + word);
 	function doneWithThisWord() {
-	  console.log('doneWithThisWord');
 	  wordsAlreadyLookedUp[word].forEach(function(fn) { fn(); });
 	  wordsAlreadyLookedUp[word] = 'finished';
-	  console.log('lookup finished for W::' + word);
 	  done();
 	}
 	$.ajax({
@@ -1363,27 +1354,21 @@ $(function() {
       filter(function(concept) {
 	return (concept !== undefined);
       });
-    console.log({ conceptNames: concepts.map(function(c) { return c.name; }) });
     queueLookup({
       inputs: concepts,
       done: done,
       lookupStarted: function(concept) {
-	console.log('lookupStarted(ONT::' + concept.name + ') => ' + JSON.stringify('senses' in concept));
 	return ('senses' in concept);
       },
       lookupFinished: function(concept) {
-	console.log('lookupFinished(ONT::' + concept.name + ') => ' + JSON.stringify(concept.senses instanceof Array));
 	return (concept.senses instanceof Array);
       },
       onLookupFinished: function(concept, fn) {
-	console.log('adding to ONT::' + concept.name + '.lookupListeners');
 	concept.lookupListeners.push(fn);
       },
       lookup: function(concept, done) {
-	console.log('initializing ONT::' + concept.name + '.lookupListeners');
 	concept.lookupListeners = [];
 	concept.senses = null; // make lookupStarted return true
-	console.log('lookup started for ONT::' + concept.name);
 	$.ajax({
 	  url: DSL_DATA_PATH +
 	       encodeURIComponent(
@@ -1393,14 +1378,10 @@ $(function() {
 	}).
 	done(function(conceptDSL) {
 	  concept.senses = xslTransformAndEval(dslToJSON, conceptDSL);
-	  console.log('lookup finished for ONT::' + concept.name);
-	  console.log(concept);
 	  concept.lookupListeners.forEach(function(fn) {
-	    console.log('calling a lookupListener for ONT::' + concept.name);
 	    fn();
 	  });
 	  delete concept.lookupListeners;
-	  console.log('deleted ONT::' + concept.name + '.lookupListeners');
 	  done();
 	}).
 	fail(function(jqXHR, textStatus, errorThrown) {
