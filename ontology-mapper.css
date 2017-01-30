@@ -237,7 +237,7 @@ line.hidden {
 }
 
 line.optional {
-  stroke-dasharray: 5;
+  stroke-dasharray: 10,5;
 }
 
 ul.selectable {

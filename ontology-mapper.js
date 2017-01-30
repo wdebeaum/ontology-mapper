@@ -674,6 +674,10 @@ $(function() {
     draggedLine.attr('y2', pos.y);
     draggedLine.attr(dragFromSide + '-handle', dragFromHandleID);
     $('#' + dragFromConceptOrRole + '-lines').append(draggedLine);
+    if (dragFromConceptOrRole == 'role' &&
+        $('#role-mapping-optional').prop('checked')) {
+      draggedLine.addClass('optional');
+    }
     selectLi(draggedLine[0]);
     $(document.body).on('mousemove', mouseMoveWhileDragging);
     $(document.body).on('mouseup', mouseUpWhileDragging);
@@ -2234,6 +2238,10 @@ $(function() {
 	  yourRole: yourRole,
 	  line: line
 	};
+	if ($('#role-mapping-optional').prop('checked')) {
+	  mapping.optional = true;
+	  line.addClass('optional');
+	}
 	if (tripsRolePath !== undefined) {
 	  mapping.tripsRolePath = tripsRolePath;
 	}
