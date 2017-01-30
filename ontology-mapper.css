@@ -126,13 +126,14 @@ td.map {
   width: 20%;
 }
 
-/* FIXME this leaves a 4-6px gap below the svg (and sometimes to the right,
- * depending on the overall viewport height!?!), but if I "fix" that it throws
- * the whole table out of whack. Huh?
- */
 td.map svg {
-  width: calc(20vw - 4px);
-  height: calc(50vh - 3em - 7px);
+  width: calc(20vw - 1px);
+  height: calc(50vh - 3em - 3px);
+  /* ugh.
+   * http://stackoverflow.com/questions/20312655/svg-taking-full-height-inside-a-table-td/20319433#20319433
+   */
+  display: block;
+  max-height: 100%;
 }
 
 #select-concept-mapping-button {

@@ -275,7 +275,7 @@ $(function() {
   }
 
   function updateHandles(side, conceptOrRole) {
-    var mapWidth = $('.map')[0].offsetWidth - 4; // FIXME see CSS
+    var mapWidth = $('.map')[0].offsetWidth - 1; // -1px for border
     var handlesG = $('#' + side + '-' + conceptOrRole + '-handles');
     // iterate over (visible) nodes
     var firstNode;
