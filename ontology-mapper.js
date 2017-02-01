@@ -1088,6 +1088,59 @@ $(function() {
       }, 200); // milliseconds
   }
 
+  /* Expand tree under concept until more than one now-visible descendant has
+   * some of the given words under it, or zero not-yet-visible descendants do.
+   */
+  function expandUntilWords(tree, side, concept, words) {
+    var conceptId = ((side == 'trips') ? 'ont__' + concept.name : concept.id);
+    var children =
+      tree.get_json(conceptId).children.map(function(child) {
+	return ((side == 'trips') ?
+	         tripsOnt[child.id.replace(/^ont__/,'')] :
+		 yourOntById[child.id]);
+      });
+    var childToExpand = undefined;
+    for (var i = 0; i < children.length; i++) {
+      var child = children[i];
+      var childWords = wordsInConceptOrDescendants(side, child);
+      if (childWords.some(function(w) { return words.includes(w); })) {
+	if (childToExpand === undefined) {
+	  childToExpand = child;
+	} else { // more than one childToExpand, we're done
+	  var id = ((side == 'trips') ? 'ont__' + concept.name : concept.id);
+	  // expand it
+	  tree.open_node(id);
+	  // select (only) it
+	  tree.deselect_all();
+	  tree.select_node(id);
+	  // scroll so we can see it
+	  $('#' + id)[0].scrollIntoView(true);
+	  return;
+	}
+      }
+    }
+    if (childToExpand !== undefined) {
+      tree.open_node((side == 'trips') ? 'ont__' + concept.name : concept.id);
+      expandUntilWords(tree, side, childToExpand, words);
+    }
+  }
+
+  $('#trips-word-counts, #your-word-counts').on('click', function(evt) {
+    var li = $(evt.target);
+    var wordsStr = li.attr('title');
+    if (wordsStr !== undefined) { // has counted words
+      var words = wordsStr.split(/, /);
+      var side = this.id.substr(0,this.id.indexOf('-'));
+      var conceptId = li[0].id.replace(/__word-count$/,'');
+      var concept =
+        ((side == 'trips') ?
+	  tripsOnt[conceptId.replace(/^ont__/,'')] :
+	  yourOntById[conceptId]);
+      var tree = window[side + 'JsTree'];
+      expandUntilWords(tree, side, concept, words);
+    }
+  });
+
   /*
    * load trees
    */

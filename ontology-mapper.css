@@ -96,6 +96,10 @@ div.word-counts li {
   color: blue;
 }
 
+div.word-counts li:not(:empty) {
+  cursor: pointer;
+}
+
 div.jstree {
   display: inline-block;
   width: calc(100% - 2em);
