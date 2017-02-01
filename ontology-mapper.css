@@ -213,11 +213,13 @@ input:invalid, select:invalid {
 .handle {
   fill-color: black;
   stroke: #444;
+  cursor: pointer;
 }
 
 line {
   stroke-width: 0.3em;
   stroke: black;
+  cursor: pointer;
 }
 
 line.selected {
@@ -247,6 +249,7 @@ ul.selectable {
 
 ul.selectable li {
   list-style-type: circle;
+  cursor: pointer;
 }
 
 ul.selectable li.selected {

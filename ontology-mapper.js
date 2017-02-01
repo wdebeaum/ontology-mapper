@@ -1015,6 +1015,7 @@ $(function() {
   // "|/-\\"; // ASCII spinning line
   function spin(maxCount) {
     $('#spinner').show();
+    $('#layout').css('cursor', 'progress');
     spinCount++;
     if (spinCount > maxCount) {
       spinCount = 0;
@@ -1028,6 +1029,7 @@ $(function() {
 
   function finishSpinning() {
     $('#spinner').hide();
+    $('#layout').css('cursor', ''); // restore default cursor
   }
 
   /* Make sure that all TRIPS concepts that have senses of any of the given
