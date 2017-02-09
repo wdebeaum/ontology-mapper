@@ -207,7 +207,7 @@ input:invalid, select:invalid {
   margin-left: 1em;
 }
 
-#trips-words {
+#trips-words, #trips-wn-mappings {
   display: inline-block;
   white-space: normal;
   width: calc(100% - 6em);

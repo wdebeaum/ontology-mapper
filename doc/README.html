@@ -172,7 +172,7 @@ var {
  <li>Add a prefix to all concepts/roles in your ontology.
  <li>Mappings between concepts that aren't visible because that part of the tree is collapsed, are displayed as if they were mappings between their nearest visible ancestors, except partially transparent.
  <li>Role mapping lines for different concept mappings for the same pair of concepts are color-coded and displayed together.
- <li>Word counts next to each concept show how many words under that concept are also under the selected concept on the other side.
+ <li>Word counts next to each concept show how many words under that concept are also under the selected concept on the other side (including words in WordNet mappings on the TRIPS side).
  <li>Click on a word count to expand the tree until multiple visible branches have word counts, if possible.
  <li>Inheritance of original TRIPS roles and their restrictions, and of your roles (inherited things are gray instead of black).
  <li>Build Lisp mapping rules for use in TRIPS, optionally posting them for anyone to use with the web parsers.
@@ -180,8 +180,9 @@ var {
 
 <h4>Planned Features</h4>
 <ul>
- <li>Display mappings between TRIPS concepts and WordNet senses in the TRIPS concept details, and use them as extra words for the word count feature.
  <li>Extend mapping lines into tree views, up to the name of the concept.
+ <li>Click on WordNet mappings to look them up in WN (hard because official WN web page doesn't allow searching by sense key).
+ <li>Count words we get indirectly from WordNet, not just directly mapped senses (hard because then we have to load WN data).
 </ul>
 
 <h3>Known Bugs</h3>
@@ -234,7 +235,7 @@ var {
 
 <p>All of your concept details are editable. Fields that are required but not yet filled are <span class="invalid">highlighted in pink</span>.</p>
 
-<p>The optional words field enables you to easily see which concepts share words between the TRIPS ontology and your ontology. When a concept in one ontology is selected, and it has words associated with it, each concept in the other ontology displays how many of those words (if any) are associated with it, next to its node in the tree view. If the node is collapsed, the words associated with its hidden descendants are also included. Each word is counted only once, even if it is associated with multiple descendants. If you place your mouse cursor over the number, a tooltip will appear, showing you which words are shared. If you click on the number, the tree will be expanded under that node until multiple visible branches have word counts, if possible. Otherwise it will be expanded to show the single node that has a word count, and that node will be selected and scrolled into view.</p>
+<p>The optional words field enables you to easily see which concepts share words between the TRIPS ontology and your ontology. When a concept in one ontology is selected, and it has words associated with it, each concept in the other ontology displays how many of those words (if any) are associated with it, next to its node in the tree view. If the node is collapsed, the words associated with its hidden descendants are also included. Each word is counted only once, even if it is associated with multiple descendants. If you place your mouse cursor over the number, a tooltip will appear, showing you which words are shared. If you click on the number, the tree will be expanded under that node until multiple visible branches have word counts, if possible. Otherwise it will be expanded to show the single node that has a word count. Either way, the last expanded node will be selected and scrolled into view.</p>
 
 <p>There are three things that are editable in the TRIPS concept details, but they are actually part of the selected concept mapping. They are: other mapped TRIPS concepts, extra roles, and role filler types/paths.</p>
 

@@ -916,18 +916,42 @@ $(function() {
   }
 
   function wordsDirectlyInConcept(side, concept) {
+    var words = [];
     switch (side) {
       case 'trips':
         if ('senses' in concept && concept.senses !== null) {
-          return sortUniq(concept.senses.map(function(s) { return s.word }));
-	} else {
-	  return [];
+          concept.senses.forEach(function(s) {
+	    words.push(
+	      s.word.
+	      replace(/_/g,' ').
+	      replace(/[()]/g,'').
+	      replace(/\s+/g,' ').
+	      trim()
+	    );
+	  });
 	}
+	if ('overlap' in concept) {
+	  concept.overlap.forEach(function(sk) {
+	    words.push(
+	      sk.
+	      replace(/%.*/,'').
+	      replace(/_/g,' ')
+	    );
+	  });
+	}
+	break;
       case 'your':
-        return sortUniq(concept.words);
+        words = concept.words.map(function(w) {
+	  return w.
+	    replace(/_/g,' ').
+	    replace(/\s+/g,' ').
+	    trim();
+	});
+	break;
       default:
         throw new Error('WTF');
     }
+    return sortUniq(words);
   }
 
   function wordsInConceptOrDescendants(side, concept) {
@@ -1090,6 +1114,8 @@ $(function() {
 
   /* Expand tree under concept until more than one now-visible descendant has
    * some of the given words under it, or zero not-yet-visible descendants do.
+   * Scroll the lowest expanded node into view and return true if any were
+   * expanded. Return false otherwise.
    */
   function expandUntilWords(tree, side, concept, words) {
     var conceptId = ((side == 'trips') ? 'ont__' + concept.name : concept.id);
@@ -1115,13 +1141,22 @@ $(function() {
 	  tree.select_node(id);
 	  // scroll so we can see it
 	  $('#' + id)[0].scrollIntoView(true);
-	  return;
+	  return true;
 	}
       }
     }
     if (childToExpand !== undefined) {
       tree.open_node((side == 'trips') ? 'ont__' + concept.name : concept.id);
-      expandUntilWords(tree, side, childToExpand, words);
+      if (!expandUntilWords(tree, side, childToExpand, words)) {
+	// if we didn't expand anything further, select the child and scroll
+	var childId = ((side == 'trips') ? 'ont__' + childToExpand.name : childToExpand.id);
+	tree.deselect_all();
+	tree.select_node(childId);
+	$('#' + childId)[0].scrollIntoView(true);
+      }
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -1557,6 +1592,11 @@ $(function() {
       var name = tripsJsTree.get_text(args.selected[0]);
       $('#trips-concept-name').text(name);
       var concept = tripsOnt[name];
+      var wnSpan = $('#trips-wn-mappings');
+      wnSpan.empty();
+      if ('overlap' in concept) {
+	wnSpan.text(concept.overlap.join(', '));
+      }
       // load words and examples from ONT::$name.xml
       // (first clear these so they don't show the wrong values before load)
       var examplesUl = $('#trips-examples');
