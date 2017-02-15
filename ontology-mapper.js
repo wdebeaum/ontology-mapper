@@ -1928,6 +1928,21 @@ $(function() {
   });
 
   /*
+   * detect unsaved changes and prompt before unloading the page
+   */
+
+  var haveUnsavedChanges = false;
+  var unsavedChangesPrompt = 'There are unsaved changes. Are you sure you want to leave this page?'; // will be ignored by modern browsers, but might as well have it anyway
+  window.onbeforeunload = function(evt) {
+    if (haveUnsavedChanges) {
+      evt.returnValue = unsavedChangesPrompt;
+      return unsavedChangesPrompt;
+    } else {
+      return null; // don't prompt
+    }
+  };
+
+  /*
    * add/remove your concept
    */
 
@@ -1943,6 +1958,7 @@ $(function() {
       updateMap('your', 'concept', { openClose: true });
     }, 0);
     $('#your-details').hide();
+    haveUnsavedChanges = true;
   });
 
   $('#add-concept').on('click', function() {
@@ -1964,6 +1980,7 @@ $(function() {
       $('#your-concept-name').focus();
       updateMap('your', 'concept', { openClose: true });
     }, 0);
+    haveUnsavedChanges = true;
   });
 
   /*
@@ -2095,6 +2112,7 @@ $(function() {
       lines: [line] // TODO if doing the above TODO, also make a line for each
     };
     yourConcept.conceptMappings.push(mapping);
+    haveUnsavedChanges = true;
     return mapping;
   }
 
@@ -2123,6 +2141,7 @@ $(function() {
     setTimeout(function() {
       updateMap('trips', 'role', { openClose: true });
     }, 0);
+    haveUnsavedChanges = true;
   }
 
   $('#add-concept-mapping, #rem-concept-mapping').on('click', function(evt) {
@@ -2179,6 +2198,7 @@ $(function() {
 	  input.val(newNames.join(' '));
 	}
 	updateMap('trips', 'concept', { openClose: true });
+	haveUnsavedChanges = true;
       }
     }
   }
@@ -2362,6 +2382,7 @@ $(function() {
       default:
         throw new Error('WTF');
     }
+    haveUnsavedChanges = true;
   }
 
   $('#add-role-mapping, #rem-role-mapping').on('click', function(evt) {
@@ -2430,6 +2451,7 @@ $(function() {
 	updateMap(side, 'role', { openClose: true });
       }, 0);
     }
+    haveUnsavedChanges = true;
   });
 
   /*
@@ -2516,6 +2538,7 @@ $(function() {
     });
     input.first().focus();
     updateMap('trips', 'role', { openClose: true });
+    haveUnsavedChanges = true;
   }
 
   function isTripsRoleName(name) {
@@ -2627,6 +2650,7 @@ $(function() {
       alert(e);
       setTimeout(function() { input.focus(); }, 0);
     }
+    haveUnsavedChanges = true;
   }
 
   window.remTripsRolePath = function(evt) {
@@ -2670,6 +2694,7 @@ $(function() {
       });
     }
     updateMap('trips', 'role', { openClose: true });
+    haveUnsavedChanges = true;
   }
 
   /*
@@ -2687,6 +2712,7 @@ $(function() {
     }
     var i = $(evt.currentTarget).parent().index();
     concept.dynamic_sem_frame[i].roles = [newName];
+    haveUnsavedChanges = true;
   };
 
   function remTripsRole(evt) {
@@ -2730,6 +2756,7 @@ $(function() {
 	    });
 	}
       });
+      haveUnsavedChanges = true;
     }
   }
 
@@ -2751,6 +2778,7 @@ $(function() {
     concept.name = newName;
     yourJsTree.set_text(id, concept.name);
     yourOntByName[concept.name] = concept;
+    haveUnsavedChanges = true;
   });
 
   $('#your-concept-name').on('input', function(evt) {
@@ -2758,12 +2786,14 @@ $(function() {
     var concept = yourOntById[id];
     var newName = $(this).val();
     yourJsTree.set_text(id, newName);
+    haveUnsavedChanges = true;
   });
 
   $('#your-concept-comment').on('input', function(evt) {
     var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
     concept.comment = $(this).val();
+    haveUnsavedChanges = true;
   });
 
   $('#is-symbol').on('change', function(evt) {
@@ -2779,6 +2809,7 @@ $(function() {
       clearUlUpToTemplate($('#your-roles'));
     }
     showYourRoles(concept);
+    haveUnsavedChanges = true;
   });
 
   window.inputYourRole = function(evt, key) {
@@ -2794,6 +2825,7 @@ $(function() {
     } else {
       role[key] = $(evt.currentTarget).val();
     }
+    haveUnsavedChanges = true;
   };
 
   window.inputYourRoleFilledBySymbol = function(evt) {
@@ -2827,6 +2859,7 @@ $(function() {
       fillerValuesUl.show();
     }
     updateMap('your', 'role', { openClose: true });
+    haveUnsavedChanges = true;
   };
 
   function remYourRole(evt) {
@@ -2862,6 +2895,7 @@ $(function() {
 	    }
 	  });
       });
+      haveUnsavedChanges = true;
     }
   }
 
@@ -2887,6 +2921,7 @@ $(function() {
     var input = newLi.children('input');
     input.first().focus();
     updateMap('your', 'role', { openClose: true });
+    haveUnsavedChanges = true;
   };
 
   window.remYourRoleFiller = function(evt) {
@@ -2927,6 +2962,7 @@ $(function() {
       });
     }
     updateMap('your', 'role', { openClose: true });
+    haveUnsavedChanges = true;
   };
 
   window.changeYourRoleFiller = function(evt) {
@@ -2938,6 +2974,7 @@ $(function() {
     var role = concept.roles[roleIndex];
     var filler = role.fillers[fillerIndex];
     filler.value = $(input).val();
+    haveUnsavedChanges = true;
   };
 
   $('#your-words').on('input', function(evt) {
@@ -2945,6 +2982,7 @@ $(function() {
     var concept = yourOntById[id];
     concept.words = $(this).val().trim().replace(/\s+/, ' ').split(/\s*,\s*/);
     lookupAndUpdateWordCounts(concept);
+    haveUnsavedChanges = true;
     return true;
   });
 
@@ -2953,6 +2991,7 @@ $(function() {
     var concept = yourOntById[id];
     var i = $(evt.currentTarget).parent().index();
     concept.examples[i] = $(evt.currentTarget).val();
+    haveUnsavedChanges = true;
   };
 
   function remExample(evt) {
@@ -2967,6 +3006,7 @@ $(function() {
 	console.log('TODO shift example li IDs');
 	concept.examples[i] = undefined;
       }
+      haveUnsavedChanges = true;
     }
   }
 
@@ -3504,6 +3544,7 @@ $(function() {
       encodeURIComponent(JSON.stringify(savableRepresentation(), null, "\t"))
     // not sure why [0] is necessary, but it doesn't work without it
     )[0].click();
+    haveUnsavedChanges = false;
   });
 
   $('#load').on('click', function(evt) {
@@ -3519,6 +3560,7 @@ $(function() {
       try {
 	var rep = JSON.parse(evt.target.result);
 	loadFromSavableRepresentation(rep);
+	haveUnsavedChanges = false;
       } catch (e) {
 	alert('Error loading file ' + file.name + ': ' + e.message);
       } finally {
