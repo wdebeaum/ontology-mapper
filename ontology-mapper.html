@@ -252,8 +252,8 @@
      <dt class="inline"><label for="your-words">words</label><dd>
      <input id="your-words" type="text" class="spellcheck" placeholder="comma-separated list">
      <dt>examples<dd>
-     <ul id="your-examples">
-      <li class="template" id="your-example-template"><input type="text" class="spellcheck" oninput="inputYourExample(event)" required>
+     <ul id="your-examples" class="selectable">
+      <li class="template" id="your-example-template" onclick="selectLi(event.currentTarget)"><input type="text" class="spellcheck" oninput="inputYourExample(event)" required>
       <li class="controls"><button id="add-example">+</button> <button id="rem-example">-</button>
      </ul>
     </dl>

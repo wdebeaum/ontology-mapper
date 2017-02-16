@@ -2997,14 +2997,18 @@ $(function() {
   function remExample(evt) {
     var id = yourJsTree.get_selected()[0];
     var concept = yourOntById[id];
-    var i = $(this).parent().index();
+    var i = $(this).index();
     if (concept.examples[i] !== undefined) {
       if (concept.examples.length == i+1) {
 	concept.examples.pop();
       } else {
-	// this really shouldn't happen since examples aren't selectable
-	console.log('TODO shift example li IDs');
-	concept.examples[i] = undefined;
+	// adjust IDs of all following lis
+	for (var j = i + 1; j < concept.examples.length; j++) {
+	  $('#your-example-' +  j   ).attr('id',
+	     'your-example-' + (j-1));
+	}
+	// splice out the example
+	concept.examples.splice(i, 1)[0];
       }
       haveUnsavedChanges = true;
     }
